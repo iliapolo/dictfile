@@ -38,12 +38,14 @@ So i did what every programmer would do:
 2.  Freshen up my 'sed' skills.
 
 After a couple of hours, and with very little hair left, i thought to myself: "Man, wouldn't it be great if every one
-of these software components would provide a command lien tool for configurating the damn thing?!"
+of these software components would provide a command line tool for configurating the damn thing?!"
+
 Imagine that in order to configure the elasticsearch port, all you had to do was:
 
 `$ elasticsearch config port=9201`
 
-You may say, im a dreamer...but im not the only one...
+You may say, im a dreamer...but im not the only one...In fact, you have probably already seen something like this
+in action: `$ git config user.email me@gmail.com`. Yeap, linus has done it again...
 
 I then thought that there was nothing special about elasticsearch configuration. It is just a YAML file that can
 be very easily manipulated using some basic python code (YAML can be deserialized into a dict), So why not write
