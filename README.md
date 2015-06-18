@@ -11,12 +11,13 @@ A while back i was given a task to deploy a bunch of software components onto an
 - ...
 - ...
 
-Immediately i thought to myself: "Hey, no sweat, im sure DockerHub has containers for all these guys!". This means all
-i will have to do is write a *docker-compose* file that defines all of them. A quick lookup at the
+Immediately i thought to myself: "Hey, no sweat, im sure DockerHub has containers for all these guys!".
+
+This means all i will have to do is write a *docker-compose* file that defines all of them. A quick lookup at the
 DockerHub registery revieled that even though containers existed for most of these components, they were not exactly
-what i needed. They were either hardcoding some configuration, which was not suitable for me
-(for example elasticsearch port), or bringing in
-some extra components that i just did not want (for example StatsD with the graphite container).
+what i needed. They were either hardcoding some configuration (for example elasticsearch port), or bringing in
+extra components that i just did not need (for example StatsD with the graphite container).
+
 This meant that i had to start writing my own docker files, and configure each component to my needs. And let me tell
 you, there was a lot of configuration to do:
 
