@@ -55,3 +55,12 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Idea Files
+*.iml
+
+# pytest files
+.pytest_cache/
+
+# mac files
+.DS_Store
