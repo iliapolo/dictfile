@@ -39,10 +39,12 @@ setup(
     },
     install_requires=[
         'click==6.7',
+        'colorama==0.3.9',
+        'coloredlogger==1.3.12',
+        'flatdict==3.0.0',
         'javaproperties==0.4.0',
         'prettytable==0.7.2',
-        'pyyaml==3.12',
-        'flatdict==3.0.0',
-        'coloredlogger==1.3.12'
+        'PyYAML==3.12',
+        'six==1.11.0'
     ]
 )
