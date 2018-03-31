@@ -27,10 +27,8 @@ setup(
     packages=[
         'fileconfig',
         'fileconfig.api',
-        'fileconfig.api.json',
-        'fileconfig.api.yaml',
-        'fileconfig.api.properties',
-        'fileconfig.shell'
+        'fileconfig.shell',
+        'fileconfig.shell.commands',
     ],
     license='LICENSE',
     description="Command Line Interface for manipulating configuration files",
