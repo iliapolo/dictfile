@@ -58,3 +58,6 @@ target/
 
 # Idea Files
 *.iml
+
+# pytest files
+.pytest_cache/
