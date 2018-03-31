@@ -21,12 +21,4 @@ from fileconfig.tests.shell import BaseCommandLineTest
 class RepositoryTest(BaseCommandLineTest):
 
     def test_show(self):
-
-        filename = '{0}.properties'.format(self._testMethodName)
-
-        with open(filename, 'w') as f:
-            f.write('key=value')
-
-        self.invoke('fileconfig properties --filename {0} update --key key --value changed_value'.format(filename))
-
-        self.invoke('fileconfig repository show --filename {0} --version 1'.format(filename))
+        pass
