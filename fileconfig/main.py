@@ -15,6 +15,7 @@
 #
 #############################################################################
 
+import sys
 import click
 import os
 
@@ -31,7 +32,7 @@ from fileconfig.shell.commands import repository as repository_group
 @click.group()
 @click.pass_context
 @handle_exceptions
-def main(ctx):
+def app(ctx):
 
     # initialize the repository object
     repo = Repository('{0}/.fileconfig/repo'.format(os.path.expanduser('~')))
@@ -103,7 +104,10 @@ repository.add_command(repository_group.revisions)
 repository.add_command(repository_group.files)
 repository.add_command(repository_group.reset)
 
-main.add_command(properties)
-main.add_command(repository)
-main.add_command(json)
-main.add_command(yaml)
+app.add_command(properties)
+app.add_command(repository)
+app.add_command(json)
+app.add_command(yaml)
+
+if getattr(sys, 'frozen', False):
+    app(sys.argv[1:])

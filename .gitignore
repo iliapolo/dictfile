@@ -61,3 +61,6 @@ target/
 
 # pytest files
 .pytest_cache/
+
+# mac files
+.DS_Store

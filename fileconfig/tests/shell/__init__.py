@@ -24,7 +24,7 @@ import unittest
 from click.testing import CliRunner
 
 from fileconfig.api import logger
-from fileconfig.main import main
+from fileconfig.main import app
 
 
 class BaseCommandLineTest(unittest.TestCase):
@@ -63,7 +63,7 @@ class BaseCommandLineTest(unittest.TestCase):
 
         runner = CliRunner()
 
-        result = runner.invoke(main, command.split(' ')[1:])
+        result = runner.invoke(app, command.split(' ')[1:])
 
         if result.exception:
 

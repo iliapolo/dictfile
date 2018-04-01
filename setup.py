@@ -34,7 +34,7 @@ setup(
     description="Command Line Interface for manipulating configuration files",
     entry_points={
         'console_scripts': [
-            'fileconfig = fileconfig.main:main'
+            'fileconfig = fileconfig.main:app'
         ]
     },
     install_requires=[
