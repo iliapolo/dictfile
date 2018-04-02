@@ -19,6 +19,7 @@
 import click
 
 from fileconfig.api import writer
+from fileconfig.api import patcher
 from fileconfig.shell import commit
 from fileconfig.shell import handle_exceptions
 
@@ -67,9 +68,19 @@ def delete(ctx, key):
 @handle_exceptions
 def get(ctx, key):
 
-    value = ctx.parent.patcher.get(key)
+    value = ctx.parent.patcher.get(key, fmt=patcher.YAML)
 
-    if isinstance(value, dict) or isinstance(value, list) or isinstance(value, set):
-        click.echo(writer.get_yaml_string(value))
-    else:
-        click.echo(value)
+    click.echo(value)
+
+
+@click.command()
+@click.option('--key', required=True)
+@click.option('--value', required=True)
+@click.pass_context
+@handle_exceptions
+@commit
+def remove(ctx, key, value):
+
+    patched = ctx.parent.patcher.remove(key=key, value=value).finish()
+
+    writer.write_yaml(patched, ctx.parent.params['filename'])

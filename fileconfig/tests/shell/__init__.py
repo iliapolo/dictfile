@@ -63,14 +63,5 @@ class BaseCommandLineTest(unittest.TestCase):
 
         runner = CliRunner()
 
-        result = runner.invoke(app, command.split(' ')[1:])
-
-        if result.exception:
-
-            if isinstance(result.exception, SystemExit):
-                raise SystemExit(result.output)
-
-            exc_info = result.exc_info
-            raise exc_info[0], exc_info[1], exc_info[2]
-
-        return result
+        self.log.info('Invoking command: {0}'.format(command))
+        return runner.invoke(app, command.split(' ')[1:])

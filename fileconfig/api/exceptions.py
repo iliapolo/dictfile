@@ -44,15 +44,6 @@ class KeyNotFoundException(BaseException):
         return "Key '{0}' does not exist".format(self.key)
 
 
-class KeyAlreadyExistsException(BaseException):
-
-    def __init__(self, key):
-        self.key = key
-
-    def __str__(self):
-        return "Key '{0}' already exists".format(self.key)
-
-
 class InvalidValueTypeException(BaseException):
 
     def __init__(self, key, expected_type, actual_type):
@@ -61,6 +52,16 @@ class InvalidValueTypeException(BaseException):
         self.actual_type = actual_type
 
     def __str__(self):
-        return "Invalid value type for key '{0}. Expected: {1}, Actual: {2}".format(self.key,
-                                                                                    self.expected_type,
-                                                                                    self.actual_type)
+        return "Invalid value type for key '{0}. Expected: {1}, Actual: {2}".format(
+            self.key,
+            self.expected_type,
+            self.actual_type)
+
+
+class UnsupportedFormatException(BaseException):
+
+    def __init__(self, fmt):
+        self.fmt = fmt
+
+    def __str__(self):
+        return 'Unsupported Format: {0}'.format(self.fmt)

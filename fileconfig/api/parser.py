@@ -16,7 +16,6 @@
 #############################################################################
 
 import javaproperties
-import json
 import yaml
 
 
@@ -29,9 +28,10 @@ def parse_json(sjson):
 
     # we are using 'yaml' here instead of 'json' because json
     # parses the keys as unicode objects (instead of string,
-    # see https://stackoverflow.com/questions/956867/how-to-get-string-objects-instead-of-unicode-from-json),
-    # which causes a problem with flatdict in identifying complex keys. (see flatdict.py#_has_delimiter
-    # (json is a sub-set of yaml so it works)
+    # see https://stackoverflow.com/questions/956867/how-to-get-string-objects-
+    # instead-of-unicode-from-json),
+    # which causes a problem with flatdict in identifying complex keys. (see flatdict.py#_
+    # has_delimiter (json is a sub-set of yaml so it works)
 
     return parse_yaml(sjson)
 

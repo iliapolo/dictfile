@@ -52,6 +52,8 @@ def properties(ctx, filename):
     patcher = Patcher(parsed)
     ctx.patcher = patcher
 
+    ctx.params['filename'] = os.path.abspath(filename)
+
 
 @click.group()
 @click.pass_context
@@ -65,6 +67,8 @@ def yaml(ctx, filename):
     patcher = Patcher(parsed)
     ctx.patcher = patcher
 
+    ctx.params['filename'] = os.path.abspath(filename)
+
 
 @click.group()
 @click.pass_context
@@ -77,6 +81,8 @@ def json(ctx, filename):
     parsed = parser.parse_json(sjson)
     patcher = Patcher(parsed)
     ctx.patcher = patcher
+
+    ctx.params['filename'] = os.path.abspath(filename)
 
 
 @click.group()
@@ -97,6 +103,7 @@ json.add_command(json_group.get)
 yaml.add_command(yaml_group.put)
 yaml.add_command(yaml_group.add)
 yaml.add_command(yaml_group.delete)
+yaml.add_command(yaml_group.remove)
 yaml.add_command(yaml_group.get)
 
 repository.add_command(repository_group.show)
@@ -109,5 +116,7 @@ app.add_command(repository)
 app.add_command(json)
 app.add_command(yaml)
 
+# allows running the application as a single executable
+# created by pyinstaller
 if getattr(sys, 'frozen', False):
     app(sys.argv[1:])

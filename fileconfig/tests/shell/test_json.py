@@ -26,29 +26,65 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write('{"key1": "value1"}')
+        with open(filename, 'w') as stream:
+            stream.write('{"key1": "value1"}')
 
-        self.invoke('fileconfig json --filename {0} put --key key1 --value value2'.format(filename))
+        self.invoke('fileconfig json --filename {0} put --key key1 --value value2'
+                    .format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, '''{
   "key1": "value2"
+}''')
+
+    def test_put_with_int_value(self):
+
+        filename = '{0}.json'.format(self._testMethodName)
+
+        with open(filename, 'w') as stream:
+            stream.write('{"key1": "value1"}')
+
+        self.invoke('fileconfig json --filename {0} put --key key1 --value 5'
+                    .format(filename))
+
+        with open(filename) as stream:
+            modified_content = stream.read()
+
+        self.assertEqual(modified_content, '''{
+  "key1": 5
+}''')
+
+    def test_put_with_float_value(self):
+
+        filename = '{0}.json'.format(self._testMethodName)
+
+        with open(filename, 'w') as stream:
+            stream.write('{"key1": "value1"}')
+
+        self.invoke('fileconfig json --filename {0} put --key key1 --value 5.5'
+                    .format(filename))
+
+        with open(filename) as stream:
+            modified_content = stream.read()
+
+        self.assertEqual(modified_content, '''{
+  "key1": 5.5
 }''')
 
     def test_put_compound_value(self):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write('{"key1": "value1"}')
+        with open(filename, 'w') as stream:
+            stream.write('{"key1": "value1"}')
 
-        self.invoke('fileconfig json --filename {0} put --key key1 --value {{"key2":"value1"}}'.format(filename))
+        self.invoke('fileconfig json --filename {0} put --key key1 --value {{"key2":"value1"}}'
+                    .format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, '''{
   "key1": {
@@ -60,17 +96,18 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write(json.dumps({
+        with open(filename, 'w') as stream:
+            stream.write(json.dumps({
                 'key1': {
                     'key2': 'value1'
                 }
             }))
 
-        self.invoke('fileconfig json --filename {0} put --key key1:key2 --value {{"key3":"value2"}}'.format(filename))
+        self.invoke('fileconfig json --filename {0} put --key key1:key2 --value {{"key3":"value2"}}'
+                    .format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, '''{
   "key1": {
@@ -84,8 +121,8 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write(json.dumps({
+        with open(filename, 'w') as stream:
+            stream.write(json.dumps({
                 'key1': {
                     'key2': 'value1',
                     'key3': 'value2'
@@ -94,8 +131,8 @@ class JsonTest(BaseCommandLineTest):
 
         self.invoke('fileconfig json --filename {0} delete --key key1:key3'.format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, '''{
   "key1": {
@@ -107,16 +144,16 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write(json.dumps({
+        with open(filename, 'w') as stream:
+            stream.write(json.dumps({
                 'key1': 'value1',
                 'key2': 'value2'
             }))
 
         self.invoke('fileconfig json --filename {0} delete --key key1'.format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, '''{
   "key2": "value2"
@@ -126,8 +163,8 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write(json.dumps({
+        with open(filename, 'w') as stream:
+            stream.write(json.dumps({
                 'key1': 'value1'
             }))
 
@@ -139,8 +176,8 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write(json.dumps({
+        with open(filename, 'w') as stream:
+            stream.write(json.dumps({
                 'key1': {
                     'key2': 'value1'
                 }
@@ -157,8 +194,8 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write(json.dumps({
+        with open(filename, 'w') as stream:
+            stream.write(json.dumps({
                 'key1': {
                     'key2': 'value1'
                 }
@@ -172,15 +209,15 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write(json.dumps({
+        with open(filename, 'w') as stream:
+            stream.write(json.dumps({
                 'key1': ['value1']
             }))
 
         self.invoke('fileconfig json --filename {0} add --key key1 --value value2'.format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, '''{
   "key1": [
@@ -193,17 +230,18 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write(json.dumps({
+        with open(filename, 'w') as stream:
+            stream.write(json.dumps({
                 'key1': {
                     'key2': ['value1']
                 }
             }))
 
-        self.invoke('fileconfig json --filename {0} add --key key1:key2 --value value2'.format(filename))
+        self.invoke('fileconfig json --filename {0} add --key key1:key2 --value value2'
+                    .format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, '''{
   "key1": {
@@ -218,15 +256,16 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write(json.dumps({
+        with open(filename, 'w') as stream:
+            stream.write(json.dumps({
                 'key1': ['value1', 'value2']
             }))
 
-        self.invoke('fileconfig json --filename {0} remove --key key1 --value value1'.format(filename))
+        self.invoke('fileconfig json --filename {0} remove --key key1 --value value1'
+                    .format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, '''{
   "key1": [
@@ -238,17 +277,18 @@ class JsonTest(BaseCommandLineTest):
 
         filename = '{0}.json'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write(json.dumps({
+        with open(filename, 'w') as stream:
+            stream.write(json.dumps({
                 'key1': {
                     'key2': ['value1', 'value2']
                 }
             }))
 
-        self.invoke('fileconfig json --filename {0} remove --key key1:key2 --value value1'.format(filename))
+        self.invoke('fileconfig json --filename {0} remove --key key1:key2 --value value1'
+                    .format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, '''{
   "key1": {

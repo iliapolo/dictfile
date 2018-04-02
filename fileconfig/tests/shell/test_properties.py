@@ -24,13 +24,14 @@ class PropertiesTest(BaseCommandLineTest):
 
         filename = '{0}.properties'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write('key1=value1')
+        with open(filename, 'w') as stream:
+            stream.write('key1=value1')
 
-        self.invoke('fileconfig properties --filename {0} put --key key1 --value value2'.format(filename))
+        self.invoke('fileconfig properties --filename {0} put --key key1 --value value2'
+                    .format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, 'key1=value2\n')
 
@@ -38,13 +39,14 @@ class PropertiesTest(BaseCommandLineTest):
 
         filename = '{0}.properties'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write('key1=value1')
+        with open(filename, 'w') as stream:
+            stream.write('key1=value1')
 
-        self.invoke('fileconfig properties --filename {0} put --key key2 --value value2'.format(filename))
+        self.invoke('fileconfig properties --filename {0} put --key key2 --value value2'
+                    .format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, 'key2=value2\nkey1=value1\n')
 
@@ -52,22 +54,34 @@ class PropertiesTest(BaseCommandLineTest):
 
         filename = '{0}.properties'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write('key1=value1\nkey2=value2')
+        with open(filename, 'w') as stream:
+            stream.write('key1=value1\nkey2=value2')
 
         self.invoke('fileconfig properties --filename {0} delete --key key1'.format(filename))
 
-        with open(filename) as f:
-            modified_content = f.read()
+        with open(filename) as stream:
+            modified_content = stream.read()
 
         self.assertEqual(modified_content, 'key2=value2\n')
+
+    def test_delete_non_existing_key(self):
+
+        filename = '{0}.properties'.format(self._testMethodName)
+
+        with open(filename, 'w') as stream:
+            stream.write('key1=value1\nkey2=value2')
+
+        result = self.invoke('fileconfig properties --filename {0} delete --key key3'
+                             .format(filename))
+
+        assert result.output == "Error: Key 'key3' does not exist\n"
 
     def test_get(self):
 
         filename = '{0}.properties'.format(self._testMethodName)
 
-        with open(filename, 'w') as f:
-            f.write('key1=value1')
+        with open(filename, 'w') as stream:
+            stream.write('key1=value1')
 
         result = self.invoke('fileconfig properties --filename {0} get --key key1'.format(filename))
 

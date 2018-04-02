@@ -26,9 +26,9 @@ class ParserTest(unittest.TestCase):
 
         resource = 'test_parse_properties.properties'
 
-        with open(get_resource(resource)) as f:
+        with open(get_resource(resource)) as stream:
 
-            sproperties = f.read()
+            sproperties = stream.read()
 
         parsed = parser.parse_properties(sproperties)
 
@@ -44,9 +44,9 @@ class ParserTest(unittest.TestCase):
 
         resource = 'test_parse_json.json'
 
-        with open(get_resource(resource)) as f:
+        with open(get_resource(resource)) as stream:
 
-            sjson = f.read()
+            sjson = stream.read()
 
         parsed = parser.parse_json(sjson)
 
@@ -60,9 +60,9 @@ class ParserTest(unittest.TestCase):
 
         resource = 'test_parse_yaml.yaml'
 
-        with open(get_resource(resource)) as f:
+        with open(get_resource(resource)) as stream:
 
-            syaml = f.read()
+            syaml = stream.read()
 
         parsed = parser.parse_yaml(syaml)
 

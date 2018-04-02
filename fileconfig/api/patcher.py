@@ -15,28 +15,90 @@
 #
 #############################################################################
 
-import yaml
-
 import flatdict
 
 from fileconfig.api import exceptions
 from fileconfig.api import parser
+from fileconfig.api import writer
 
+
+JSON='json'
+YAML = 'yaml'
 
 class Patcher(object):
 
+    """Class for patching dictionaries using strings values.
+
+    This patcher is a thin wrapper around the standard dict operations.
+    The main difference is that values given to this patcher must be only strings.
+    Values retrieved are also strings, serialized using the json format.
+
+    The patcher provides a 'fluent' api for easily performing multiple mutations.
+    To retrieve the underlying dictionary after mutations, use the 'finish' method.
+    For example:
+
+        patcher = Patcher({'key1': 'value1', 'key2':'value2'})
+        patched = patcher.set('key1', 'value3')
+                         .set('key2', 'value2')
+                         .finish()
+
+    The following holds for all methods accepting a 'key' and 'value' argument.
+    Keys are specified as strings (obviously), in order to access nested values you can specify
+    nested keys like so:
+
+        patcher = Patcher({'key1': {'key2': 'value1'}})
+        value = patcher.get('key1:key2')
+
+        (value will be 'value1')
+
+    Remember that returned values are always strings. For example:
+
+        patcher = Patcher({'key1': {'key2': 'value1'}})
+        value = patcher.get('key1')
+
+        (value will be '{"key2": "value2"}')
+
+    Values are also restricted to strings. The patcher will take care of any type conversion
+    necessary. That is:
+
+        - '5' --> 5 (int)
+        - '5.5' --> 5.5 (float)
+        - 'value1' --> 'value1' (str)
+        - '{"key1": "value1"}' --> {'key1': 'value1'} (dict)
+        - '["value1", "value2"] --> ['value1', 'value2'] (list)
+
+    """
+
     _fdict = {}
 
-    def __init__(self, pdict):
-        self._fdict = flatdict.FlatDict(pdict)
+    def __init__(self, dictionary):
+
+        """Instantiate a Patcher instance.
+
+        Args:
+
+            dictionary (dict): The dictionary to patch.
+
+        """
+
+        self._fdict = flatdict.FlatDict(dictionary)
 
     def set(self, key, value):
 
-        if value.startswith('{') and value.endswith('}'):
-            # this is a json. lets convert it
-            value = parser.parse_json(value)
+        """Add/Modify a key with the given value.
 
-        self._fdict[str(key)] = value
+        Args:
+
+            key (str): The key to operate on.
+            value (str): The value of the key.
+
+        Returns:
+
+            The patcher instance itself, for fluent api support.
+
+        """
+
+        self._fdict[str(key)] = self._deserialize(value)
         return self
 
     def add(self, key, value):
@@ -44,7 +106,7 @@ class Patcher(object):
         self._validate_list(key)
         current_value = self._fdict[key]
 
-        current_value.append(value)
+        current_value.append(self._deserialize(value))
 
         return self
 
@@ -53,7 +115,7 @@ class Patcher(object):
         self._validate_list(key)
         current_value = self._fdict[key]
 
-        current_value.remove(value)
+        current_value.remove(self._deserialize(value))
 
         return self
 
@@ -66,15 +128,40 @@ class Patcher(object):
 
         return self
 
-    def get(self, key):
+    def get(self, key, fmt=JSON):
 
         try:
             value = self._fdict[key]
-            if isinstance(value, flatdict.FlatDict):
-                return value.as_dict()
-            return value
+            return self._serialize(value, fmt)
         except KeyError:
             raise exceptions.KeyNotFoundException(key=key)
+
+    def finish(self):
+        return self._fdict.as_dict()
+
+    @staticmethod
+    def _serialize(value, fmt):
+
+        if isinstance(value, flatdict.FlatDict):
+            value = value.as_dict()
+
+        if isinstance(value, dict) or isinstance(value, list) or isinstance(value, set):
+            if fmt == JSON:
+                value = writer.get_json_string(value)
+            elif fmt == YAML:
+                value = writer.get_yaml_string(value)
+            else:
+                raise exceptions.UnsupportedFormatException(fmt=fmt)
+
+        return str(value)
+
+    @staticmethod
+    def _deserialize(value):
+
+        # this is not in-lined because it easier to debug
+        # this way.
+        parsed = parser.parse_yaml(value)
+        return parsed
 
     def _validate_list(self, key):
 
@@ -84,6 +171,3 @@ class Patcher(object):
                 key=key,
                 expected_type=list,
                 actual_type=type(value))
-
-    def finish(self):
-        return self._fdict.as_dict()

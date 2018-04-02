@@ -33,7 +33,7 @@ def write_json(djson, filename):
 
 def write_yaml(dyaml, filename):
 
-    yaml.dump(data=dyaml, stream=open(filename, 'w'), default_flow_style=False)
+    yaml.safe_dump(data=dyaml, stream=open(filename, 'w'), default_flow_style=False)
 
 
 def get_json_string(djson):
@@ -44,6 +44,6 @@ def get_json_string(djson):
 def get_yaml_string(dyaml):
 
     stream = StringIO.StringIO()
-    yaml.dump(data=dyaml, stream=stream, default_flow_style=False)
+    yaml.safe_dump(data=dyaml, stream=stream, default_flow_style=False)
 
     return stream.getvalue()

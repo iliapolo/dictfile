@@ -19,6 +19,7 @@
 import click
 
 from fileconfig.api import writer
+from fileconfig.api import patcher
 from fileconfig.shell import commit
 from fileconfig.shell import handle_exceptions
 
@@ -30,8 +31,6 @@ from fileconfig.shell import handle_exceptions
 @handle_exceptions
 @commit
 def put(ctx, key, value):
-
-    print value
 
     patched = ctx.parent.patcher.set(key=key, value=value).finish()
 
@@ -69,12 +68,9 @@ def delete(ctx, key):
 @handle_exceptions
 def get(ctx, key):
 
-    value = ctx.parent.patcher.get(key)
+    value = ctx.parent.patcher.get(key, fmt=patcher.JSON)
 
-    if isinstance(value, dict) or isinstance(value, list) or isinstance(value, set):
-        click.echo(writer.get_json_string(value))
-    else:
-        click.echo(value)
+    click.echo(value)
 
 
 @click.command()

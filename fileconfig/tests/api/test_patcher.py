@@ -14,309 +14,481 @@
 #
 #############################################################################
 
+# pylint: disable=too-many-public-methods
 
-import unittest
+import pytest
 
 from fileconfig.api.patcher import Patcher
 from fileconfig.api import exceptions
+from fileconfig.api.patcher import YAML
 
 
-class PatcherTest(unittest.TestCase):
+def test_delete():
 
-    def test_delete(self):
+    dictionary = {'key1': 'value1', 'key2': 'value2'}
 
-        dictionary = {'key1': 'value1', 'key2': 'value2'}
+    expected_dictionary = {'key2': 'value2'}
 
-        expected_dictionary = {'key2': 'value2'}
+    patcher = Patcher(dictionary)
+    dictionary = patcher.delete('key1').finish()
 
-        patcher = Patcher(dictionary)
-        dictionary = patcher.delete('key1').finish()
+    assert expected_dictionary == dictionary
 
-        self.assertDictEqual(expected_dictionary, dictionary)
 
-    def test_delete_complex_key(self):
+def test_delete_complex_key():
 
-        dictionary = {
-            'key1': {
-                'key2': 'value1',
+    dictionary = {
+        'key1': {
+            'key2': 'value1',
+            'key3': 'value2'
+        }
+    }
+
+    expected_dictionary = {
+        'key1': {
+            'key2': 'value1'
+        }
+    }
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.delete('key1:key3').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set():
+
+    dictionary = {'key1': 'value1'}
+
+    expected_dictionary = {'key1': 'value2'}
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1', 'value2').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set_dict():
+
+    dictionary = {'key1': 'value1'}
+
+    expected_dictionary = {
+        'key1': {
+            'key2': 'value2'
+        }}
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1', '{"key2":"value2"}').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set_list():
+
+    dictionary = {'key1': 'value1'}
+
+    expected_dictionary = {
+        'key1': ['value1', 'value2']
+    }
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1', '["value1", "value2"]').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set_integer():
+
+    dictionary = {'key1': 'value1'}
+
+    expected_dictionary = {
+        'key1': 5
+    }
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1', '5').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set_float():
+
+    dictionary = {'key1': 'value1'}
+
+    expected_dictionary = {
+        'key1': 5.5
+    }
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1', '5.5').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set_complex_key_compound_value():
+
+    dictionary = {
+        'key1': {
+            'key2': 'value1'
+        }
+    }
+
+    expected_dictionary = {
+        'key1': {
+            'key2': {
+                'key3': 'value2'
+            }
+        }}
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1:key2', '{"key3":"value2"}').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set_non_existing_one_level_complex_key():
+
+    dictionary = {
+        'key1': {
+            'key2': 'value1'
+        }
+    }
+
+    expected_dictionary = {
+        'key1': {
+            'key2': 'value1',
+            'key3': 'value2'
+        }
+    }
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1:key3', 'value2').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set_existing_one_level_complex_key():
+
+    dictionary = {
+        'key1': {
+            'key2': 'value1'
+        }
+    }
+
+    expected_dictionary = {
+        'key1': {
+            'key2': 'value2'
+        }
+    }
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1:key2', 'value2').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set_non_existing_two_level_complex_key():
+
+    dictionary = {
+        'key1': {
+            'key2': {
+                'key3': 'value1'
+            }
+        }
+    }
+
+    expected_dictionary = {
+        'key1': {
+            'key2': {
+                'key3': 'value1',
+                'key4': 'value2'
+            }
+        }
+    }
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1:key2:key4', 'value2').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set_existing_two_level_complex_key():
+
+    dictionary = {
+        'key1': {
+            'key2': {
+                'key3': 'value1'
+            }
+        }
+    }
+
+    expected_dictionary = {
+        'key1': {
+            'key2': {
                 'key3': 'value2'
             }
         }
+    }
 
-        expected_dictionary = {
-            'key1': {
-                'key2': 'value1'
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1:key2:key3', 'value2').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_get_existing_two_level_complex_key():
+
+    dictionary = {
+        'key1': {
+            'key2': {
+                'key3': 'value1'
             }
         }
+    }
 
-        patcher = Patcher(dictionary)
-        dictionary = patcher.delete('key1:key3').finish()
+    expected_value = 'value1'
 
-        self.assertDictEqual(expected_dictionary, dictionary)
+    patcher = Patcher(dictionary)
+    value = patcher.get('key1:key2:key3')
 
-    def test_set(self):
+    assert expected_value == value
 
-        dictionary = {'key1': 'value1'}
 
-        expected_dictionary = {'key1': 'value2'}
+def test_get_existing_one_level_complex_key():
 
-        patcher = Patcher(dictionary)
-        dictionary = patcher.set('key1', 'value2').finish()
+    dictionary = {
+        'key1': {
+            'key2': 'value1'
+        }
+    }
 
-        self.assertDictEqual(expected_dictionary, dictionary)
+    expected_value = 'value1'
 
-    def test_set_compound_value(self):
+    patcher = Patcher(dictionary)
+    value = patcher.get('key1:key2')
 
-        dictionary = {'key1': 'value1'}
+    assert expected_value == value
 
-        expected_dictionary = {
-            'key1': {
-                'key2': 'value2'
-            }}
 
-        patcher = Patcher(dictionary)
-        dictionary = patcher.set('key1', '{"key2":"value2"}').finish()
+def test_get_string():
 
-        self.assertDictEqual(expected_dictionary, dictionary)
+    dictionary = {
+        'key1': 'value1'
+    }
 
-    def test_set_complex_key_compound_value(self):
+    expected_value = 'value1'
 
-        dictionary = {
-            'key1': {
-                'key2': 'value1'
+    patcher = Patcher(dictionary)
+    value = patcher.get('key1')
+
+    assert expected_value == value
+
+
+def test_get_integer():
+
+    dictionary = {
+        'key1': 5
+    }
+
+    expected_value = '5'
+
+    patcher = Patcher(dictionary)
+    value = patcher.get('key1')
+
+    assert expected_value == value
+
+
+def test_get_float():
+
+    dictionary = {
+        'key1': 5.5
+    }
+
+    expected_value = '5.5'
+
+    patcher = Patcher(dictionary)
+    value = patcher.get('key1')
+
+    assert expected_value == value
+
+
+def test_get_compund_object_unsupported_format():
+
+    dictionary = {
+        'key1': ['value1', 'value2']
+    }
+
+    patcher = Patcher(dictionary)
+
+    with pytest.raises(exceptions.UnsupportedFormatException):
+        patcher.get('key1', fmt='unsupported')
+
+
+def test_get_list_as_json():
+
+    dictionary = {
+        'key1': ['value1', 'value2']
+    }
+
+    expected_value = '''[
+  "value1", 
+  "value2"
+]'''
+
+    patcher = Patcher(dictionary)
+    value = patcher.get('key1')
+
+    assert expected_value == value
+
+
+def test_get_list_as_yaml():
+
+    dictionary = {
+        'key1': ['value1', 'value2']
+    }
+
+    expected_value = '''- value1
+- value2\n'''
+
+    patcher = Patcher(dictionary)
+    value = patcher.get('key1', fmt=YAML)
+
+    assert expected_value == value
+
+
+def test_get_dict_as_json():
+
+    dictionary = {
+        'key1': {
+            'key2': 'value1'
+        }
+    }
+
+    expected_value = '''{
+  "key2": "value1"
+}'''
+
+    patcher = Patcher(dictionary)
+    value = patcher.get('key1')
+
+    assert expected_value == value
+
+
+def test_get_dict_as_yaml():
+
+    dictionary = {
+        'key1': {
+            'key2': 'value1'
+        }
+    }
+
+    expected_value = 'key2: value1\n'
+
+    patcher = Patcher(dictionary)
+    value = patcher.get('key1', fmt=YAML)
+
+    assert expected_value == value
+
+
+def test_get_non_existing_two_level_complex_key():
+
+    dictionary = {
+        'key1': {
+            'key2': {
+                'key3': 'value1'
             }
         }
+    }
 
-        expected_dictionary = {
-            'key1': {
-                'key2': {
-                    'key3': 'value2'
-                }
-            }}
+    patcher = Patcher(dictionary)
 
-        patcher = Patcher(dictionary)
-        dictionary = patcher.set('key1:key2', '{"key3":"value2"}').finish()
+    with pytest.raises(exceptions.KeyNotFoundException):
+        patcher.get('key1:key2:key4')
 
-        self.assertDictEqual(expected_dictionary, dictionary)
 
-    def test_set_non_existing_one_level_complex_key(self):
+def test_delete_non_existing_key():
 
-        dictionary = {
-            'key1': {
-                'key2': 'value1'
-            }
+    dictionary = {'key': 'value'}
+
+    patcher = Patcher(dictionary)
+
+    with pytest.raises(exceptions.KeyNotFoundException):
+        patcher.delete('non-existing')
+
+
+def test_add():
+
+    dictionary = {'key': ['value1']}
+
+    expected_dictionary = {'key': ['value1', 'value2']}
+
+    patcher = Patcher(dictionary)
+    patcher.add(key='key', value='value2')
+
+    assert expected_dictionary == dictionary
+
+
+def test_add_to_complex_key():
+
+    dictionary = {
+        'key1': {
+            'key2': ['value1']
         }
+    }
 
-        expected_dictionary = {
-            'key1': {
-                'key2': 'value1',
-                'key3': 'value2'
-            }
+    expected_dictionary = {
+        'key1': {
+            'key2': ['value1', 'value2']
         }
+    }
 
-        patcher = Patcher(dictionary)
-        dictionary = patcher.set('key1:key3', 'value2').finish()
+    patcher = Patcher(dictionary)
+    patcher.add(key='key1:key2', value='value2')
 
-        self.assertDictEqual(expected_dictionary, dictionary)
+    assert expected_dictionary == dictionary
 
-    def test_set_existing_one_level_complex_key(self):
 
-        dictionary = {
-            'key1': {
-                'key2': 'value1'
-            }
-        }
+def test_add_to_non_list():
 
-        expected_dictionary = {
-            'key1': {
-                'key2': 'value2'
-            }
-        }
+    dictionary = {'key': 'value1'}
 
-        patcher = Patcher(dictionary)
-        dictionary = patcher.set('key1:key2', 'value2').finish()
+    patcher = Patcher(dictionary)
 
-        self.assertDictEqual(expected_dictionary, dictionary)
-
-    def test_set_non_existing_two_level_complex_key(self):
-
-        dictionary = {
-            'key1': {
-                'key2': {
-                    'key3': 'value1'
-                }
-            }
-        }
-
-        expected_dictionary = {
-            'key1': {
-                'key2': {
-                    'key3': 'value1',
-                    'key4': 'value2'
-                }
-            }
-        }
-
-        patcher = Patcher(dictionary)
-        dictionary = patcher.set('key1:key2:key4', 'value2').finish()
-
-        self.assertDictEqual(expected_dictionary, dictionary)
-
-    def test_set_existing_two_level_complex_key(self):
-
-        dictionary = {
-            'key1': {
-                'key2': {
-                    'key3': 'value1'
-                }
-            }
-        }
-
-        expected_dictionary = {
-            'key1': {
-                'key2': {
-                    'key3': 'value2'
-                }
-            }
-        }
-
-        patcher = Patcher(dictionary)
-        dictionary = patcher.set('key1:key2:key3', 'value2').finish()
-
-        self.assertDictEqual(expected_dictionary, dictionary)
-
-    def test_get_existing_two_level_complex_key(self):
-
-        dictionary = {
-            'key1': {
-                'key2': {
-                    'key3': 'value1'
-                }
-            }
-        }
-
-        expected_value = 'value1'
-
-        patcher = Patcher(dictionary)
-        value = patcher.get('key1:key2:key3')
-
-        self.assertEqual(expected_value, value)
-
-    def test_get_existing_one_level_complex_key(self):
-
-        dictionary = {
-            'key1': {
-                'key2': 'value1'
-            }
-        }
-
-        expected_value = 'value1'
-
-        patcher = Patcher(dictionary)
-        value = patcher.get('key1:key2')
-
-        self.assertEqual(expected_value, value)
-
-    def test_get_non_existing_two_level_complex_key(self):
-
-        dictionary = {
-            'key1': {
-                'key2': {
-                    'key3': 'value1'
-                }
-            }
-        }
-
-        patcher = Patcher(dictionary)
-        try:
-            patcher.get('key1:key2:key4')
-            self.fail('Expected a failure due to missing key')
-        except exceptions.KeyNotFoundException:
-            pass
-
-    def test_delete_non_existing_key(self):
-
-        dictionary = {'key': 'value'}
-
-        patcher = Patcher(dictionary)
-        try:
-            patcher.delete('non-existing')
-            self.fail('Expected a failure when deleting a non-existing key')
-        except exceptions.KeyNotFoundException:
-            pass
-
-    def test_add(self):
-
-        dictionary = {'key': ['value1']}
-
-        expected_dictionary = {'key': ['value1', 'value2']}
-
-        patcher = Patcher(dictionary)
+    with pytest.raises(exceptions.InvalidValueTypeException):
         patcher.add(key='key', value='value2')
 
-        self.assertDictEqual(expected_dictionary, dictionary)
 
-    def test_add_to_complex_key(self):
+def test_remove_from_complex_key():
 
-        dictionary = {
-            'key1': {
-                'key2': ['value1']
-            }
+    dictionary = {
+        'key1': {
+            'key2': ['value1', 'value2']
         }
+    }
 
-        expected_dictionary = {
-            'key1': {
-                'key2': ['value1', 'value2']
-            }
+    expected_dictionary = {
+        'key1': {
+            'key2': ['value1']
         }
+    }
 
-        patcher = Patcher(dictionary)
-        patcher.add(key='key1:key2', value='value2')
+    patcher = Patcher(dictionary)
+    patcher.remove(key='key1:key2', value='value2')
 
-        self.assertDictEqual(expected_dictionary, dictionary)
+    assert expected_dictionary == dictionary
 
-    def test_add_to_non_list(self):
 
-        dictionary = {'key': 'value1'}
+def test_remove():
 
-        patcher = Patcher(dictionary)
+    dictionary = {
+        'key1': ['value1', 'value2']
+    }
 
-        try:
-            patcher.add(key='key', value='value2')
-            self.fail('Expected a failure when adding to a non list value')
-        except exceptions.InvalidValueTypeException:
-            pass
+    expected_dictionary = {
+        'key1': ['value1']
+    }
 
-    def test_remove_from_complex_key(self):
+    patcher = Patcher(dictionary)
+    patcher.remove(key='key1', value='value2')
 
-        dictionary = {
-            'key1': {
-                'key2': ['value1', 'value2']
-            }
-        }
-
-        expected_dictionary = {
-            'key1': {
-                'key2': ['value1']
-            }
-        }
-
-        patcher = Patcher(dictionary)
-        patcher.remove(key='key1:key2', value='value2')
-
-        self.assertDictEqual(expected_dictionary, dictionary)
-
-    def test_remove(self):
-
-        dictionary = {
-            'key1': ['value1', 'value2']
-        }
-
-        expected_dictionary = {
-            'key1': ['value1']
-        }
-
-        patcher = Patcher(dictionary)
-        patcher.remove(key='key1', value='value2')
-
-        self.assertDictEqual(expected_dictionary, dictionary)
+    assert expected_dictionary == dictionary

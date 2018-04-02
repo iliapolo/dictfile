@@ -62,10 +62,12 @@ def handle_exceptions(func):
         try:
             func(*args, **kwargs)
         except exceptions.VersionNotFoundException as e:
-            raise click.ClickException('Version {0} does not exist for file {1}'.format(e.version, e.filename))
+            raise click.ClickException(str(e))
         except exceptions.FileNotFoundException as e:
-            raise click.ClickException('File {0} does not exist'.format(e.filename))
+            raise click.ClickException(str(e))
         except exceptions.InvalidValueTypeException as e:
+            raise click.ClickException(str(e))
+        except exceptions.KeyNotFoundException as e:
             raise click.ClickException(str(e))
 
     return wrapper
