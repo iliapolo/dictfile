@@ -23,9 +23,7 @@ from fileconfig.api.patcher import Patcher
 from fileconfig.api import parser
 from fileconfig.api.repository import Repository
 from fileconfig.shell import handle_exceptions
-from fileconfig.shell.commands import properties as properties_group
-from fileconfig.shell.commands import json as json_group
-from fileconfig.shell.commands import yaml as yaml_group
+from fileconfig.shell.commands import configurer as configurer_group
 from fileconfig.shell.commands import repository as repository_group
 
 
@@ -36,53 +34,24 @@ def app(ctx):
 
     # initialize the repository object
     repo = Repository('{0}/.fileconfig/repo'.format(os.path.expanduser('~')))
-    repo.init()
     ctx.repo = repo
 
 
 @click.group()
 @click.pass_context
-@click.option('--filename', required=True)
-def properties(ctx, filename):
+@click.option('--alias', required=True)
+def configurer(ctx, alias):
 
-    with open(filename) as f:
-        sproperties = f.read()
+    repo = ctx.parent.repo
 
-    parsed = parser.parse_properties(sproperties)
+    file_path = repo.path(alias)
+
+    with open(file_path) as f:
+        string = f.read()
+
+    parsed = parser.parse(string=string, fmt=repo.fmt(alias))
     patcher = Patcher(parsed)
     ctx.patcher = patcher
-
-    ctx.params['filename'] = os.path.abspath(filename)
-
-
-@click.group()
-@click.pass_context
-@click.option('--filename', required=True)
-def yaml(ctx, filename):
-
-    with open(filename) as f:
-        syaml = f.read()
-
-    parsed = parser.parse_yaml(syaml)
-    patcher = Patcher(parsed)
-    ctx.patcher = patcher
-
-    ctx.params['filename'] = os.path.abspath(filename)
-
-
-@click.group()
-@click.pass_context
-@click.option('--filename', required=True)
-def json(ctx, filename):
-
-    with open(filename) as f:
-        sjson = f.read()
-
-    parsed = parser.parse_json(sjson)
-    patcher = Patcher(parsed)
-    ctx.patcher = patcher
-
-    ctx.params['filename'] = os.path.abspath(filename)
 
 
 @click.group()
@@ -90,31 +59,20 @@ def repository():
     pass
 
 
-properties.add_command(properties_group.put)
-properties.add_command(properties_group.delete)
-properties.add_command(properties_group.get)
-
-json.add_command(json_group.put)
-json.add_command(json_group.add)
-json.add_command(json_group.delete)
-json.add_command(json_group.remove)
-json.add_command(json_group.get)
-
-yaml.add_command(yaml_group.put)
-yaml.add_command(yaml_group.add)
-yaml.add_command(yaml_group.delete)
-yaml.add_command(yaml_group.remove)
-yaml.add_command(yaml_group.get)
+configurer.add_command(configurer_group.put)
+configurer.add_command(configurer_group.add)
+configurer.add_command(configurer_group.delete)
+configurer.add_command(configurer_group.remove)
+configurer.add_command(configurer_group.get)
 
 repository.add_command(repository_group.show)
 repository.add_command(repository_group.revisions)
 repository.add_command(repository_group.files)
 repository.add_command(repository_group.reset)
+repository.add_command(repository_group.add)
 
-app.add_command(properties)
 app.add_command(repository)
-app.add_command(json)
-app.add_command(yaml)
+app.add_command(configurer)
 
 # allows running the application as a single executable
 # created by pyinstaller

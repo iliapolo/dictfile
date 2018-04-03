@@ -18,21 +18,48 @@
 
 class VersionNotFoundException(BaseException):
 
-    def __init__(self, filename, version):
-        self.filename = filename
+    def __init__(self, file_path, version):
+        self.file_path = file_path
         self.version = version
 
     def __str__(self):
-        return 'Version {0} not found for file: {0}'.format(self.version, self.filename)
+        return 'Version {0} not found for file: {0}'.format(self.version, self.file_path)
+
+
+class AliasNotFoundException(BaseException):
+
+    def __init__(self, alias):
+        self.alias = alias
+
+    def __str__(self):
+        return 'Alias {0} not found'.format(self.alias)
+
+
+class FileIsDirectoryException(BaseException):
+
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def __str__(self):
+        return '{0} is a directory, not a file'.format(self.file_path)
 
 
 class FileNotFoundException(BaseException):
 
-    def __init__(self, filename):
-        self.filename = filename
+    def __init__(self, file_path):
+        self.file_path = file_path
 
     def __str__(self):
-        return 'File {0} not found'.format(self.filename)
+        return 'File {0} does not exist'.format(self.file_path)
+
+
+class FileAlreadyExistsException(BaseException):
+
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def __str__(self):
+        return 'File {0} already exists'.format(self.file_path)
 
 
 class KeyNotFoundException(BaseException):

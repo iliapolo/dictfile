@@ -24,29 +24,41 @@ from fileconfig.shell import handle_exceptions
 
 
 @click.command()
-@click.option('--filename', required=True)
-@click.option('--version', required=True)
+@click.option('--alias', required=True)
+@click.option('--file-path', required=True)
+@click.option('--fmt', 'fmt', required=True)
 @click.pass_context
 @handle_exceptions
-def show(ctx, filename, version):
+def add(ctx, alias, file_path, fmt):
 
-    repo = ctx.parent.parent.repo
-
-    click.echo(repo.contents(filename, version))
+    ctx.parent.parent.repo.add(alias=alias, file_path=file_path, fmt=fmt)
 
 
 @click.command()
-@click.option('--filename', required=True)
+@click.option('--alias', required=True)
+@click.option('--version', required=True)
 @click.pass_context
 @handle_exceptions
-def revisions(ctx, filename):
+def show(ctx, alias, version):
 
     repo = ctx.parent.parent.repo
 
-    table = PrettyTable(field_names=['filename', 'timestamp', 'version'])
+    click.echo(repo.contents(alias, version))
 
-    for revision in sorted(repo.revisions(filename), key=lambda rev: rev.version):
-        table.add_row([revision.filename,
+
+@click.command()
+@click.option('--alias', required=True)
+@click.pass_context
+@handle_exceptions
+def revisions(ctx, alias):
+
+    repo = ctx.parent.parent.repo
+
+    table = PrettyTable(field_names=['alias', 'path', 'timestamp', 'version'])
+
+    for revision in sorted(repo.revisions(alias), key=lambda rev: rev.version):
+        table.add_row([revision.alias,
+                       revision.file_path,
                        datetime.datetime.fromtimestamp(revision.timestamp).isoformat(),
                        revision.version])
 
@@ -60,24 +72,24 @@ def files(ctx):
 
     repo = ctx.parent.parent.repo
 
-    table = PrettyTable(field_names=['filename'])
+    table = PrettyTable(field_names=['alias', 'path', 'format'])
 
     for f in repo.files():
-        table.add_row([f])
+        table.add_row([f.alias, f.file_path, f.fmt])
 
     click.echo(table.get_string())
 
 
 @click.command()
-@click.option('--filename', required=True)
+@click.option('--alias', required=True)
 @click.option('--version', required=True)
 @click.pass_context
 @handle_exceptions
-def reset(ctx, filename, version):
+def reset(ctx, alias, version):
 
     repo = ctx.parent.parent.repo
 
-    with open(filename, 'w') as f:
-        f.write(repo.contents(filename, version))
+    with open(repo.path(alias), 'w') as f:
+        f.write(repo.contents(alias, version))
 
-    repo.commit(filename)
+    repo.commit(alias)

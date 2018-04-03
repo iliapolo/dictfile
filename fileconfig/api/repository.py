@@ -18,76 +18,157 @@
 
 import shutil
 import os
-import base64
 
 from fileconfig.api import utils
 from fileconfig.api import exceptions
+from fileconfig.api import parser
+from fileconfig.api import writer
+
+
+def _state_change(func):
+
+    def wrapper(self, *args, **kwargs):
+
+        state_file = os.path.join(self.repo_dir, 'repo.json')
+
+        # read the state before any changes are made
+        with open(state_file) as stream:
+            state = parser.parse_json(stream.read())
+
+        try:
+
+            # apply the function to make changes.
+            func(self, *args, **kwargs)
+
+            # persist the new state if everything is ok
+            writer.write_json(djson=self._state, file_path=state_file)
+
+        except BaseException:
+
+            # revert back to the state before any changes were made
+            # in case of a failure
+            self._state = state
+
+            # re-raise
+            raise
+
+    return wrapper
 
 
 class Repository(object):
 
-    _repo_dir = None
+    BLANK_STATE = {
+        'files': {}
+    }
+
+    repo_dir = None
+    _state = None
 
     def __init__(self, repo_dir):
-        self._repo_dir = repo_dir
 
-    def commit(self, filename):
+        self.repo_dir = repo_dir
 
-        file_dir = base64.b64encode(filename)
+        utils.smkdir(self.repo_dir)
 
-        utils.smkdir(os.path.join(self._repo_dir, file_dir))
+        state_file = os.path.join(self.repo_dir, 'repo.json')
 
-        version = self._find_current_version(filename) + 1
-        shutil.copy(src=filename, dst=os.path.join(self._repo_dir, file_dir, str(version)))
+        if not os.path.exists(state_file):
+            writer.write_json(djson=self.BLANK_STATE, file_path=state_file)
 
-    def exists(self, filename):
+        with open(state_file) as stream:
+            self._state = parser.parse_json(stream.read())
 
-        file_dir = base64.b64encode(filename)
+    @_state_change
+    def add(self, alias, file_path, fmt):
 
-        return os.path.isdir(os.path.join(self._repo_dir, file_dir))
+        file_path = os.path.abspath(file_path)
 
-    def revisions(self, filename):
+        if not os.path.exists(file_path):
+            raise exceptions.FileNotFoundException(file_path=file_path)
 
-        if not self.exists(filename):
-            raise exceptions.FileNotFoundException(filename=filename)
+        if os.path.isdir(file_path):
+            raise exceptions.FileIsDirectoryException(file_path=file_path)
+
+        if self._exists(alias):
+            raise exceptions.FileAlreadyExistsException(file_path=file_path)
+
+        with open(file_path) as stream:
+            parser.parse(string=stream.read(), fmt=fmt)
+
+        self._state['files'][alias] = {'file_path': file_path, 'fmt': fmt}
+        self.commit(alias)
+
+    @_state_change
+    def remove(self, alias):
+
+        if not self._exists(alias):
+            raise exceptions.AliasNotFoundException(alias=alias)
+
+        del self._state['files'][alias]
+
+    def path(self, alias):
+
+        if not self._exists(alias):
+            raise exceptions.AliasNotFoundException(alias=alias)
+
+        return self._state['files'][alias]['file_path']
+
+    def fmt(self, alias):
+        return self._state['files'][alias]['fmt']
+
+    def commit(self, alias):
+
+        utils.smkdir(os.path.join(self.repo_dir, alias))
+
+        version = self._find_current_version(alias) + 1
+        shutil.copy(src=self.path(alias), dst=os.path.join(self.repo_dir, alias, str(version)))
+
+    def revisions(self, alias):
+
+        if not self._exists(alias):
+            raise exceptions.AliasNotFoundException(alias=alias)
 
         revisions = []
 
-        file_dir = base64.b64encode(filename)
-
-        for version in utils.lsf(os.path.join(self._repo_dir, file_dir)):
-            timestamp = os.path.getmtime(os.path.join(self._repo_dir, file_dir, version))
-            revisions.append(Revision(filename=filename, timestamp=timestamp, version=int(version)))
+        for version in utils.lsf(os.path.join(self.repo_dir, alias)):
+            timestamp = os.path.getmtime(os.path.join(self.repo_dir, alias, version))
+            revisions.append(Revision(alias=alias,
+                                      file_path=self.path(alias),
+                                      timestamp=timestamp,
+                                      version=int(version)))
 
         return revisions
 
     def files(self):
 
-        return map(lambda encoded: base64.b64decode(encoded), utils.lsd(self._repo_dir))
+        result = []
+        for alias in self._state['files']:
+            result.append(File(alias=alias,
+                               file_path=self.path(alias),
+                               fmt=self.fmt(alias)))
 
-    def contents(self, filename, version):
+        return result
 
-        file_dir = base64.b64encode(filename)
+    def contents(self, alias, version):
 
-        if not self.exists(filename):
-            raise exceptions.FileNotFoundException(filename=filename)
+        if not self._exists(alias):
+            raise exceptions.AliasNotFoundException(alias=alias)
 
-        file_path = os.path.join(self._repo_dir, file_dir, version)
+        file_path = os.path.join(self.repo_dir, alias, version)
 
         if not os.path.exists(file_path):
-            raise exceptions.VersionNotFoundException(filename=filename, version=version)
+            raise exceptions.VersionNotFoundException(file_path=alias, version=version)
 
         with open(file_path) as f:
             return f.read()
 
-    def init(self):
-        utils.smkdir(self._repo_dir)
+    def _exists(self, alias):
 
-    def _find_current_version(self, filename):
+        return alias in self._state['files']
 
-        file_dir = base64.b64encode(filename)
+    def _find_current_version(self, alias):
 
-        versions = utils.lsf(os.path.join(self._repo_dir, file_dir))
+        versions = utils.lsf(os.path.join(self.repo_dir, alias))
 
         if not versions:
             return -1
@@ -95,25 +176,19 @@ class Repository(object):
         return max(map(lambda version: int(version), versions))
 
 
+class File(object):
+
+    def __init__(self, alias, file_path, fmt):
+        super(File, self).__init__()
+        self.fmt = fmt
+        self.file_path = file_path
+        self.alias = alias
+
+
 class Revision(object):
 
-    _filename = None
-    _timestamp = None
-    _version = None
-
-    def __init__(self, filename, timestamp, version):
-        self._timestamp = timestamp
-        self._filename = filename
-        self._version = version
-
-    @property
-    def filename(self):
-        return self._filename
-
-    @property
-    def timestamp(self):
-        return self._timestamp
-
-    @property
-    def version(self):
-        return self._version
+    def __init__(self, alias, file_path, timestamp, version):
+        self.alias = alias
+        self.timestamp = timestamp
+        self.file_path = file_path
+        self.version = version

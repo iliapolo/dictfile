@@ -38,18 +38,11 @@ def commit(func):
 
         ctx = _lookup_context(*args)
 
-        filename = ctx.parent.params['filename']
-
-        repo = ctx.parent.parent.repo
-
-        if repo.exists(filename):
-            # this is the first change to this file
-            # save the original version as well.
-            repo.commit(filename)
+        alias = ctx.parent.params['alias']
 
         func(*args, **kwargs)
 
-        ctx.parent.parent.repo.commit(filename)
+        ctx.parent.parent.repo.commit(alias)
 
     return wrapper
 
@@ -63,7 +56,7 @@ def handle_exceptions(func):
             func(*args, **kwargs)
         except exceptions.VersionNotFoundException as e:
             raise click.ClickException(str(e))
-        except exceptions.FileNotFoundException as e:
+        except exceptions.AliasNotFoundException as e:
             raise click.ClickException(str(e))
         except exceptions.InvalidValueTypeException as e:
             raise click.ClickException(str(e))

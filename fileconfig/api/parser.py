@@ -18,6 +18,12 @@
 import javaproperties
 import yaml
 
+from fileconfig.api import exceptions
+
+JSON='json'
+YAML = 'yaml'
+PROPERTIES = 'properties'
+
 
 def parse_properties(sproperties):
 
@@ -39,3 +45,18 @@ def parse_json(sjson):
 def parse_yaml(syaml):
 
     return yaml.safe_load(syaml)
+
+
+def parse(string, fmt):
+
+    if fmt.lower() not in [JSON, YAML, PROPERTIES]:
+        raise exceptions.UnsupportedFormatException(fmt=fmt)
+
+    if fmt == JSON:
+        return parse_json(string)
+
+    if fmt == YAML:
+        return parse_yaml(string)
+
+    if fmt == PROPERTIES:
+        return parse_properties(string)

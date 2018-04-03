@@ -24,6 +24,8 @@ from fileconfig.api import writer
 
 JSON='json'
 YAML = 'yaml'
+PROPERTIES = 'properties'
+
 
 class Patcher(object):
 
