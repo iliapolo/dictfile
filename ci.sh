@@ -1,4 +1,6 @@
-#!/usr/bin/env bash -e
+#!/usr/bin/env bash
+
+set -e
 
 echo "Installing test requirements"
 pip install -r test-requirements.txt
