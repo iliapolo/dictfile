@@ -15,20 +15,10 @@
 #
 #############################################################################
 
-import os
 
+JSON = 'json'
+YAML = 'yaml'
+PROPERTIES = 'properties'
 
-def lsf(directory):
-
-    return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
-
-
-def lsd(directory):
-
-    return [f for f in os.listdir(directory) if os.path.isdir(os.path.join(directory, f))]
-
-
-def smkdir(directory):
-
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+SUPPORTED_FORMATS = [JSON, YAML, PROPERTIES]
+COMPOUND_FORMATS = [JSON, YAML]

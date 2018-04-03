@@ -16,9 +16,9 @@
 #############################################################################
 
 
-import click
-
 from functools import wraps
+
+import click
 
 from fileconfig.api import exceptions
 
@@ -61,6 +61,8 @@ def handle_exceptions(func):
         except exceptions.InvalidValueTypeException as e:
             raise click.ClickException(str(e))
         except exceptions.KeyNotFoundException as e:
+            raise click.ClickException(str(e))
+        except exceptions.UnsupportedOperationException as e:
             raise click.ClickException(str(e))
 
     return wrapper

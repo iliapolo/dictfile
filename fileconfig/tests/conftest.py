@@ -24,9 +24,10 @@ from click.testing import CliRunner
 from fileconfig.api import logger
 from fileconfig.main import app
 from fileconfig.api import writer
+from fileconfig.api import constants
 
 
-@pytest.fixture(params=['yaml', 'json'])
+@pytest.fixture(params=constants.SUPPORTED_FORMATS)
 def configurer(request):
 
     class Configurer(object):
@@ -59,7 +60,7 @@ def configurer(request):
 
     # create the file we intent to alias
     fmt = request.param
-    writer.write(dictionary={}, file_path=request.node.name, fmt=fmt)
+    writer.dump(obj={}, file_path=request.node.name, fmt=fmt)
     CliRunner().invoke(app, 'fileconfig repository add --alias {0} --file-path {1} --fmt {2}'
                        .format(request.node.name, request.node.name, fmt).split(' ')[1:],
                        catch_exceptions=False)
@@ -68,3 +69,14 @@ def configurer(request):
 
     # cleanup
     shutil.rmtree(tempdir)
+
+
+@pytest.fixture()
+def temp_file():
+
+    file_path = tempfile.mkstemp()[1]
+
+    yield file_path
+
+    # cleanup
+    os.remove(file_path)

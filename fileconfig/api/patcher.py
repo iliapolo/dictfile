@@ -20,11 +20,7 @@ import flatdict
 from fileconfig.api import exceptions
 from fileconfig.api import parser
 from fileconfig.api import writer
-
-
-JSON='json'
-YAML = 'yaml'
-PROPERTIES = 'properties'
+from fileconfig.api import constants
 
 
 class Patcher(object):
@@ -130,7 +126,7 @@ class Patcher(object):
 
         return self
 
-    def get(self, key, fmt=JSON):
+    def get(self, key, fmt=constants.JSON):
 
         try:
             value = self._fdict[key]
@@ -147,13 +143,8 @@ class Patcher(object):
         if isinstance(value, flatdict.FlatDict):
             value = value.as_dict()
 
-        if isinstance(value, dict) or isinstance(value, list) or isinstance(value, set):
-            if fmt == JSON:
-                value = writer.get_json_string(value)
-            elif fmt == YAML:
-                value = writer.get_yaml_string(value)
-            else:
-                raise exceptions.UnsupportedFormatException(fmt=fmt)
+        if isinstance(value, (dict, list, set)):
+            value = writer.dumps(value, fmt=fmt)
 
         return str(value)
 
@@ -161,8 +152,9 @@ class Patcher(object):
     def _deserialize(value):
 
         # this is not in-lined because it easier to debug
-        # this way.
-        parsed = parser.parse_yaml(value)
+        # this way. note that if the value is a primitive, yaml
+        # will return the correct type as well.
+        parsed = parser.loads(string=value, fmt=constants.YAML)
         return parsed
 
     def _validate_list(self, key):

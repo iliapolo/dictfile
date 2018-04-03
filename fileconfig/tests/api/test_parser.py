@@ -14,63 +14,84 @@
 #
 #############################################################################
 
-import unittest
+import pytest
 
 from fileconfig.api import parser
+from fileconfig.api import exceptions
 from fileconfig.tests.resources import get_resource
+from fileconfig.api import constants
 
 
-class ParserTest(unittest.TestCase):
+@pytest.mark.parametrize("resource,fmt,expected", [
 
-    def test_parse_properties(self):
+    ("test_load_properties.properties", constants.PROPERTIES, {
+        'key1': 'value1',
+        'key2': 'value2',
+        'key3': 'value3    ',
+        'key4': 'first, second, third'
+    }),
 
-        resource = 'test_parse_properties.properties'
+    ("test_load_json.json", constants.JSON, {
+        'key1': 'value1',
+        '   key2': '  value2  '
+    }),
 
-        with open(get_resource(resource)) as stream:
+    ("test_load_yaml.yaml", constants.YAML, {
+        'key1': 'value1',
+        'key2': {
+            'a': 'test1',
+            'b': 'test2'
+        }
+    })
 
-            sproperties = stream.read()
+])
+def test_load(resource, fmt, expected):
 
-        parsed = parser.parse_properties(sproperties)
+    actual = parser.load(file_path=get_resource(resource), fmt=fmt)
 
-        self.assertDictEqual(
-            {
-                'key1': 'value1',
-                'key2': 'value2',
-                'key3': 'value3    ',
-                'key4': 'first, second, third'
-            }, parsed)
+    assert expected == actual
 
-    def test_parse_json(self):
 
-        resource = 'test_parse_json.json'
+@pytest.mark.parametrize("resource,fmt,expected", [
 
-        with open(get_resource(resource)) as stream:
+    ("test_load_properties.properties", constants.PROPERTIES, {
+        'key1': 'value1',
+        'key2': 'value2',
+        'key3': 'value3    ',
+        'key4': 'first, second, third'
+    }),
 
-            sjson = stream.read()
+    ("test_load_json.json", constants.JSON, {
+        'key1': 'value1',
+        '   key2': '  value2  '
+    }),
 
-        parsed = parser.parse_json(sjson)
+    ("test_load_yaml.yaml", constants.YAML, {
+        'key1': 'value1',
+        'key2': {
+            'a': 'test1',
+            'b': 'test2'
+        }
+    })
 
-        self.assertDictEqual(
-            {
-                'key1': 'value1',
-                '   key2': '  value2  '
-            }, parsed)
+])
+def test_loads(resource, fmt, expected):
 
-    def test_parse_yaml(self):
+    with open(get_resource(resource)) as stream:
+        string = stream.read()
 
-        resource = 'test_parse_yaml.yaml'
+    actual = parser.loads(string=string, fmt=fmt)
 
-        with open(get_resource(resource)) as stream:
+    assert expected == actual
 
-            syaml = stream.read()
 
-        parsed = parser.parse_yaml(syaml)
+def test_load_unsupported_format(temp_file):
 
-        self.assertDictEqual(
-            {
-                'key1': 'value1',
-                'key2': {
-                    'a': 'test1',
-                    'b': 'test2'
-                }
-            }, parsed)
+    with pytest.raises(exceptions.UnsupportedFormatException):
+        parser.load(file_path=temp_file, fmt='unsupported')
+
+
+def test_loads_unsupported_format():
+
+    with pytest.raises(exceptions.UnsupportedFormatException):
+        parser.loads(string='dummy', fmt='unsupported')

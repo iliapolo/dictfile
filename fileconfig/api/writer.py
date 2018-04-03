@@ -15,77 +15,49 @@
 #
 #############################################################################
 
-import javaproperties
-import json
-import yaml
 import StringIO
+import json
 
+import javaproperties
+import yaml
+
+from fileconfig.api import constants
 from fileconfig.api import exceptions
-from fileconfig.api.parser import YAML
-from fileconfig.api.parser import JSON
-from fileconfig.api.parser import PROPERTIES
 
 
-def write_properties(dproperties, file_path):
+def dump(obj, file_path, fmt):
 
+    string = dumps(obj=obj, fmt=fmt)
     with open(file_path, 'w') as stream:
-        javaproperties.dump(props=dproperties, fp=stream, timestamp=False)
+        stream.write(string)
 
 
-def write_json(djson, file_path):
+def dumps(obj, fmt):
 
-    with open(file_path, 'w') as stream:
-        json.dump(obj=djson, fp=stream, indent=2)
+    if fmt == constants.JSON:
+        return json.dumps(obj=obj, indent=2)
 
+    elif fmt == constants.YAML:
+        stream = StringIO.StringIO()
+        yaml.safe_dump(data=obj, stream=stream, default_flow_style=False)
+        return stream.getvalue()
 
-def write_yaml(dyaml, file_path):
+    elif fmt == constants.PROPERTIES:
 
-    with open(file_path, 'w') as stream:
-        yaml.safe_dump(data=dyaml, stream=stream, default_flow_style=False)
+        # only dictionaries can be represented as a string
+        # in the java properties file format
+        if not isinstance(obj, dict):
+            raise exceptions.InvalidValueTypeException(key=None,
+                                                       expected_type=dict,
+                                                       actual_type=type(obj))
+        for key, value in obj.items():
+            if isinstance(value, (dict, list, set)):
+                raise exceptions.InvalidValueTypeException(key=key,
+                                                           expected_type='str, int, float',
+                                                           actual_type=type(value))
+            obj[key] = str(value)
 
+        return javaproperties.dumps(props=obj, timestamp=False)
 
-def write(dictionary, file_path, fmt):
-
-    if fmt.lower() not in [JSON, YAML, PROPERTIES]:
+    else:
         raise exceptions.UnsupportedFormatException(fmt=fmt)
-
-    if fmt == JSON:
-        return write_json(djson=dictionary, file_path=file_path)
-
-    if fmt == YAML:
-        return write_yaml(dyaml=dictionary, file_path=file_path)
-
-    if fmt == PROPERTIES:
-        return write_properties(dproperties=dictionary, file_path=file_path)
-
-
-def get_json_string(djson):
-
-    return json.dumps(obj=djson, indent=2)
-
-
-def get_yaml_string(dyaml):
-
-    stream = StringIO.StringIO()
-    yaml.safe_dump(data=dyaml, stream=stream, default_flow_style=False)
-
-    return stream.getvalue()
-
-
-def get_properties_string(dproperties):
-    raise NotImplementedError()
-
-
-def get_string(dictionary, fmt):
-
-    if fmt.lower() not in [JSON, YAML, PROPERTIES]:
-        raise exceptions.UnsupportedFormatException(fmt=fmt)
-
-    if fmt == JSON:
-        return get_json_string(djson=dictionary)
-
-    if fmt == YAML:
-        return get_yaml_string(dyaml=dictionary)
-
-    if fmt == PROPERTIES:
-        return get_properties_string(dproperties=dictionary)

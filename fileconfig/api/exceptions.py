@@ -21,15 +21,17 @@ class VersionNotFoundException(BaseException):
     def __init__(self, file_path, version):
         self.file_path = file_path
         self.version = version
+        super(VersionNotFoundException, self).__init__(self.__str__())
 
     def __str__(self):
-        return 'Version {0} not found for file: {0}'.format(self.version, self.file_path)
+        return 'Version {0} not found for file: {1}'.format(self.version, self.file_path)
 
 
 class AliasNotFoundException(BaseException):
 
     def __init__(self, alias):
         self.alias = alias
+        super(AliasNotFoundException, self).__init__(self.__str__())
 
     def __str__(self):
         return 'Alias {0} not found'.format(self.alias)
@@ -39,6 +41,7 @@ class FileIsDirectoryException(BaseException):
 
     def __init__(self, file_path):
         self.file_path = file_path
+        super(FileIsDirectoryException, self).__init__(self.__str__())
 
     def __str__(self):
         return '{0} is a directory, not a file'.format(self.file_path)
@@ -48,6 +51,7 @@ class FileNotFoundException(BaseException):
 
     def __init__(self, file_path):
         self.file_path = file_path
+        super(FileNotFoundException, self).__init__(self.__str__())
 
     def __str__(self):
         return 'File {0} does not exist'.format(self.file_path)
@@ -57,6 +61,7 @@ class FileAlreadyExistsException(BaseException):
 
     def __init__(self, file_path):
         self.file_path = file_path
+        super(FileAlreadyExistsException, self).__init__(self.__str__())
 
     def __str__(self):
         return 'File {0} already exists'.format(self.file_path)
@@ -66,6 +71,7 @@ class KeyNotFoundException(BaseException):
 
     def __init__(self, key):
         self.key = key
+        super(KeyNotFoundException, self).__init__(self.__str__())
 
     def __str__(self):
         return "Key '{0}' does not exist".format(self.key)
@@ -77,6 +83,7 @@ class InvalidValueTypeException(BaseException):
         self.expected_type = expected_type
         self.key = key
         self.actual_type = actual_type
+        super(InvalidValueTypeException, self).__init__(self.__str__())
 
     def __str__(self):
         return "Invalid value type for key '{0}. Expected: {1}, Actual: {2}".format(
@@ -89,6 +96,18 @@ class UnsupportedFormatException(BaseException):
 
     def __init__(self, fmt):
         self.fmt = fmt
+        super(UnsupportedFormatException, self).__init__(self.__str__())
 
     def __str__(self):
         return 'Unsupported Format: {0}'.format(self.fmt)
+
+
+class UnsupportedOperationException(BaseException):
+
+    def __init__(self, fmt, operation):
+        self.operation = operation
+        self.fmt = fmt
+        super(UnsupportedOperationException, self).__init__(self.__str__())
+
+    def __str__(self):
+        return "Unsupported operation: {0} (format={1}) ".format(self.operation, self.fmt)

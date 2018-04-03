@@ -19,6 +19,8 @@
 import click
 
 from fileconfig.api import writer
+from fileconfig.api import constants
+from fileconfig.api import exceptions
 from fileconfig.shell import commit
 from fileconfig.shell import handle_exceptions
 
@@ -30,6 +32,22 @@ from fileconfig.shell import handle_exceptions
 @handle_exceptions
 @commit
 def put(ctx, key, value):
+
+    alias = ctx.parent.params['alias']
+
+    fmt = ctx.parent.parent.repo.fmt(alias)
+
+    if fmt in [constants.PROPERTIES]:
+        if ':' in key:
+            raise exceptions.UnsupportedOperationException(fmt=fmt,
+                                                           operation='put with complex keys')
+        if value.startswith('{') and value.endswith('}'):
+            raise exceptions.UnsupportedOperationException(fmt=fmt,
+                                                           operation='put with complex values')
+
+        if value.startswith('[') and value.endswith(']'):
+            raise exceptions.UnsupportedOperationException(fmt=fmt,
+                                                           operation='put with complex values')
 
     patched = ctx.parent.patcher.set(key=key, value=value).finish()
 
@@ -44,6 +62,13 @@ def put(ctx, key, value):
 @commit
 def add(ctx, key, value):
 
+    alias = ctx.parent.params['alias']
+
+    fmt = ctx.parent.parent.repo.fmt(alias)
+
+    if fmt in [constants.PROPERTIES]:
+        raise exceptions.UnsupportedOperationException(fmt=fmt, operation='add')
+
     patched = ctx.parent.patcher.add(key=key, value=value).finish()
 
     write_result(patched, ctx)
@@ -55,6 +80,14 @@ def add(ctx, key, value):
 @handle_exceptions
 @commit
 def delete(ctx, key):
+
+    alias = ctx.parent.params['alias']
+
+    fmt = ctx.parent.parent.repo.fmt(alias)
+
+    if fmt in [constants.PROPERTIES] and ':' in key:
+        raise exceptions.UnsupportedOperationException(fmt=fmt,
+                                                       operation='delete with complex keys')
 
     patched = ctx.parent.patcher.delete(key=key).finish()
 
@@ -71,6 +104,10 @@ def get(ctx, key):
 
     fmt = ctx.parent.parent.repo.fmt(alias)
 
+    if fmt in [constants.PROPERTIES] and ':' in key:
+        raise exceptions.UnsupportedOperationException(fmt=fmt,
+                                                       operation='get with complex keys')
+
     value = ctx.parent.patcher.get(key, fmt=fmt)
 
     click.echo(value)
@@ -84,6 +121,13 @@ def get(ctx, key):
 @commit
 def remove(ctx, key, value):
 
+    alias = ctx.parent.params['alias']
+
+    fmt = ctx.parent.parent.repo.fmt(alias)
+
+    if fmt in [constants.PROPERTIES]:
+        raise exceptions.UnsupportedOperationException(fmt=fmt, operation='remove')
+
     patched = ctx.parent.patcher.remove(key=key, value=value).finish()
 
     write_result(patched, ctx)
@@ -96,4 +140,4 @@ def write_result(result, ctx):
     file_path = ctx.parent.parent.repo.path(alias)
     fmt = ctx.parent.parent.repo.fmt(alias)
 
-    writer.write(dictionary=result, file_path=file_path, fmt=fmt)
+    writer.dump(obj=result, file_path=file_path, fmt=fmt)

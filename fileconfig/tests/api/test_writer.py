@@ -14,26 +14,129 @@
 #
 #############################################################################
 
-import unittest
+# pylint: disable=bad-continuation
+
+import pytest
 
 from fileconfig.api import writer
+from fileconfig.api import constants
+from fileconfig.api import exceptions
 
 
-class WriterTest(unittest.TestCase):
+# pylint: disable=trailing-whitespace
+@pytest.mark.parametrize("dictionary,fmt,expected", [
 
-    def test_get_yaml_string(self):
+    ({
+         'key1': {
+             'key2': 'value2',
+             'key3': 'value3'
+         }
+     },
+     constants.JSON,
+     '''{
+  "key1": {
+    "key3": "value3", 
+    "key2": "value2"
+  }
+}'''),
 
-        dictionary = {
-            'key1': {
-                'key2': 'value2',
-                'key3': 'value3'
-            }
-        }
-        expected_yaml = '''key1:
+    ({
+         'key1': {
+             'key2': 'value2',
+             'key3': 'value3'
+         }
+     },
+     constants.YAML,
+     '''key1:
   key2: value2
   key3: value3
-'''
+'''),
 
-        yaml = writer.get_yaml_string(dictionary)
+    ({
+         'key2': 'value2',
+         'key3': 'value3'
+     },
+     constants.PROPERTIES,
+     '''key3=value3
+key2=value2
+''')
 
-        self.assertEqual(expected_yaml, yaml)
+])
+def test_dump(temp_file, dictionary, fmt, expected):
+
+    writer.dump(obj=dictionary, fmt=fmt, file_path=temp_file)
+
+    with open(temp_file) as stream:
+        actual = stream.read()
+
+    assert expected == actual
+
+
+# pylint: disable=trailing-whitespace
+@pytest.mark.parametrize("dictionary,fmt,expected", [
+
+    ({
+         'key1': {
+             'key2': 'value2',
+             'key3': 'value3'
+         }
+     },
+     constants.JSON,
+     '''{
+  "key1": {
+    "key3": "value3", 
+    "key2": "value2"
+  }
+}'''),
+
+    ({
+         'key1': {
+             'key2': 'value2',
+             'key3': 'value3'
+         }
+     },
+     constants.YAML,
+     '''key1:
+  key2: value2
+  key3: value3
+'''),
+
+    ({
+         'key2': 'value2',
+         'key3': 'value3'
+     },
+     constants.PROPERTIES,
+     '''key3=value3
+key2=value2
+''')
+
+])
+def test_dumps(dictionary, fmt, expected):
+
+    actual = writer.dumps(dictionary, fmt=fmt)
+
+    assert expected == actual
+
+
+def test_dump_unsupported_format():
+
+    with pytest.raises(exceptions.UnsupportedFormatException):
+        writer.dump(obj={}, fmt='unsupported', file_path='dummy')
+
+
+def test_dumps_unsupported_format():
+
+    with pytest.raises(exceptions.UnsupportedFormatException):
+        writer.dumps({}, fmt='unsupported')
+
+
+def test_dumps_properties_not_dict():
+
+    with pytest.raises(exceptions.InvalidValueTypeException):
+        writer.dumps([], fmt=constants.PROPERTIES)
+
+
+def test_dumps_properties_key_not_primitive():
+
+    with pytest.raises(exceptions.InvalidValueTypeException):
+        writer.dumps({'key1': ['value1', 'value2']}, fmt=constants.PROPERTIES)

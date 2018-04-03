@@ -15,9 +15,9 @@
 #
 #############################################################################
 
-import click
 import datetime
 
+import click
 from prettytable import PrettyTable
 
 from fileconfig.shell import handle_exceptions

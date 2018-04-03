@@ -16,8 +16,9 @@
 #############################################################################
 
 import sys
-import click
 import os
+
+import click
 
 from fileconfig.api.patcher import Patcher
 from fileconfig.api import parser
@@ -46,10 +47,7 @@ def configurer(ctx, alias):
 
     file_path = repo.path(alias)
 
-    with open(file_path) as f:
-        string = f.read()
-
-    parsed = parser.parse(string=string, fmt=repo.fmt(alias))
+    parsed = parser.load(file_path=file_path, fmt=repo.fmt(alias))
     patcher = Patcher(parsed)
     ctx.patcher = patcher
 

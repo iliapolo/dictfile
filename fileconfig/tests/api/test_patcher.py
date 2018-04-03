@@ -20,7 +20,7 @@ import pytest
 
 from fileconfig.api.patcher import Patcher
 from fileconfig.api import exceptions
-from fileconfig.api.patcher import YAML
+from fileconfig.api import constants
 
 
 def test_delete():
@@ -351,7 +351,7 @@ def test_get_list_as_yaml():
 - value2\n'''
 
     patcher = Patcher(dictionary)
-    value = patcher.get('key1', fmt=YAML)
+    value = patcher.get('key1', fmt=constants.YAML)
 
     assert expected_value == value
 
@@ -385,7 +385,7 @@ def test_get_dict_as_yaml():
     expected_value = 'key2: value1\n'
 
     patcher = Patcher(dictionary)
-    value = patcher.get('key1', fmt=YAML)
+    value = patcher.get('key1', fmt=constants.YAML)
 
     assert expected_value == value
 

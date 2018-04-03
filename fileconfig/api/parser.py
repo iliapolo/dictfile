@@ -19,44 +19,36 @@ import javaproperties
 import yaml
 
 from fileconfig.api import exceptions
-
-JSON='json'
-YAML = 'yaml'
-PROPERTIES = 'properties'
+from fileconfig.api import constants
 
 
-def parse_properties(sproperties):
+def load(file_path, fmt):
 
-    return javaproperties.loads(sproperties)
-
-
-def parse_json(sjson):
-
-    # we are using 'yaml' here instead of 'json' because json
-    # parses the keys as unicode objects (instead of string,
-    # see https://stackoverflow.com/questions/956867/how-to-get-string-objects-
-    # instead-of-unicode-from-json),
-    # which causes a problem with flatdict in identifying complex keys. (see flatdict.py#_
-    # has_delimiter (json is a sub-set of yaml so it works)
-
-    return parse_yaml(sjson)
+    with open(file_path) as stream:
+        return loads(stream.read(), fmt=fmt)
 
 
-def parse_yaml(syaml):
+def loads(string, fmt):
 
-    return yaml.safe_load(syaml)
+    if fmt == constants.JSON:
 
+        # we are using 'yaml' here instead of 'json' because json
+        # parses the keys as unicode objects (instead of string,
+        # see https://stackoverflow.com/questions/956867/how-to-get-string-objects-
+        # instead-of-unicode-from-json),
+        # which causes a problem with flatdict in identifying complex keys. (see flatdict.py#_
+        # has_delimiter (json is a sub-set of yaml so it works)
 
-def parse(string, fmt):
+        return yaml.safe_load(string)
 
-    if fmt.lower() not in [JSON, YAML, PROPERTIES]:
+    elif fmt == constants.YAML:
+
+        return yaml.safe_load(string)
+
+    elif fmt == constants.PROPERTIES:
+
+        return javaproperties.loads(string)
+
+    else:
+
         raise exceptions.UnsupportedFormatException(fmt=fmt)
-
-    if fmt == JSON:
-        return parse_json(string)
-
-    if fmt == YAML:
-        return parse_yaml(string)
-
-    if fmt == PROPERTIES:
-        return parse_properties(string)
