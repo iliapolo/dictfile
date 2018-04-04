@@ -19,22 +19,24 @@
 from setuptools import setup
 
 
+PROGRAM_NAME = 'fileconfig'
+
 setup(
-    name='fileconfig',
+    name=PROGRAM_NAME,
     version='0.1',
     author='Eli Polonsky',
     author_email='eli.polonsky@gmail.com',
     packages=[
-        'fileconfig',
-        'fileconfig.api',
-        'fileconfig.shell',
-        'fileconfig.shell.commands',
+        PROGRAM_NAME,
+        '{0}.api'.format(PROGRAM_NAME),
+        '{0}.shell'.format(PROGRAM_NAME),
+        '{0}.shell.commands'.format(PROGRAM_NAME),
     ],
     license='LICENSE',
     description="Command Line Interface for manipulating configuration files",
     entry_points={
         'console_scripts': [
-            'fileconfig = fileconfig.main:app'
+            '{0} = {0}.main:app'.format(PROGRAM_NAME)
         ]
     },
     install_requires=[

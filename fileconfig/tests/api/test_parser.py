@@ -85,6 +85,16 @@ def test_loads(resource, fmt, expected):
     assert expected == actual
 
 
+# pylint: disable=fixme
+# TODO figure out how to validate a properties file
+# TODO seems like every string is acceptable
+@pytest.mark.parametrize("fmt", [constants.JSON, constants.YAML])
+def test_corrupt_file(fmt):
+
+    with pytest.raises(exceptions.CorruptFileException):
+        parser.load(get_resource('test_corrupt_file'), fmt=fmt)
+
+
 def test_load_unsupported_format(temp_file):
 
     with pytest.raises(exceptions.UnsupportedFormatException):

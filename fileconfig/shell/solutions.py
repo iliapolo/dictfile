@@ -1,3 +1,4 @@
+#############################################################################
 # Copyright (c) 2018 Eli Polonsky. All rights reserved
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,30 +15,19 @@
 #
 #############################################################################
 
-import os
-import shutil
-import tempfile
 
-import pytest
+def edit_manually():
 
-
-@pytest.fixture()
-def temp_file():
-
-    file_path = tempfile.mkstemp()[1]
-
-    yield file_path
-
-    # cleanup
-    os.remove(file_path)
+    return 'Edit the file manually and correct it.'
 
 
-@pytest.fixture()
-def temp_dir():
+def reset_to_latest(alias):
 
-    dir_path = tempfile.mkdtemp()
+    return 'Reset the file to its last working version by running: fileconfig repository reset ' \
+           '--alias {} --version latest'.format(alias)
 
-    yield dir_path
 
-    # cleanup
-    shutil.rmtree(dir_path)
+def commit(alias):
+
+    return 'Commit the current contents by running: fileconfig repository commit --alias {0}'\
+           .format(alias)

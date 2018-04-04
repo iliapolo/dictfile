@@ -14,3 +14,29 @@
 #   * limitations under the License.
 #
 #############################################################################
+
+from click.testing import CliRunner
+
+from fileconfig.api import logger
+from fileconfig.main import app
+
+
+# pylint: disable=too-few-public-methods
+class Runner(object):
+
+    def __init__(self):
+        super(Runner, self).__init__()
+        self._runner = CliRunner()
+        self.log = logger.get_logger('fileconfig.tests.shell.commands:Runner')
+
+    def run(self, command, catch_exceptions=False):
+
+        self.log.info('Invoking command: {0}'.format(command))
+
+        result = self._runner.invoke(app, command.split(' ')[1:],
+                                     catch_exceptions=catch_exceptions)
+
+        if isinstance(result.exception, SystemExit) and not catch_exceptions:
+            raise SystemExit(result.output)
+
+        return result

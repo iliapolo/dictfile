@@ -14,8 +14,6 @@
 #   * limitations under the License.
 #
 #############################################################################
-
-
 from functools import wraps
 
 import click
@@ -23,28 +21,7 @@ import click
 from fileconfig.api import exceptions
 
 
-def commit(func):
-
-    def _lookup_context(*args):
-
-        for arg in args:
-            if isinstance(arg, click.core.Context):
-                return arg
-
-        return None
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-
-        ctx = _lookup_context(*args)
-
-        alias = ctx.parent.params['alias']
-
-        func(*args, **kwargs)
-
-        ctx.parent.parent.repo.commit(alias)
-
-    return wrapper
+PROGRAM_NAME = 'fileconfig'
 
 
 def handle_exceptions(func):
@@ -54,15 +31,21 @@ def handle_exceptions(func):
 
         try:
             func(*args, **kwargs)
-        except exceptions.VersionNotFoundException as e:
-            raise click.ClickException(str(e))
-        except exceptions.AliasNotFoundException as e:
-            raise click.ClickException(str(e))
-        except exceptions.InvalidValueTypeException as e:
-            raise click.ClickException(str(e))
-        except exceptions.KeyNotFoundException as e:
-            raise click.ClickException(str(e))
-        except exceptions.UnsupportedOperationException as e:
-            raise click.ClickException(str(e))
+        except (exceptions.ApiException, click.ClickException) as e:
+            raise click.ClickException(str(e) + build_info(e))
 
     return wrapper
+
+
+def build_info(exception):
+
+    info = ''
+
+    if hasattr(exception, 'cause'):
+        info = info + '\n\n' + exception.cause + '.'
+
+    if hasattr(exception, 'possible_solutions'):
+        info = info + '\n\nPossible solutions: \n\n' + \
+               '\n'.join(['    - ' + solution + '.' for solution in exception.possible_solutions])
+
+    return info

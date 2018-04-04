@@ -26,60 +26,29 @@ from fileconfig.api import writer
 from fileconfig.api import constants
 
 
-def _state_change(func):
-
-    def wrapper(self, *args, **kwargs):
-
-        state_file = os.path.join(self.repo_dir, 'repo.json')
-
-        # read the state before any changes are made
-        state = parser.load(file_path=state_file, fmt=constants.JSON)
-
-        try:
-
-            # apply the function to make changes.
-            func(self, *args, **kwargs)
-
-            # persist the new state if everything is ok
-            # pylint: disable=protected-access
-            writer.dump(obj=self._state, file_path=state_file, fmt=constants.JSON)
-
-        except BaseException:
-
-            # revert back to the state before any changes were made
-            # in case of a failure
-            # pylint: disable=protected-access
-            self._state = state
-
-            # re-raise
-            raise
-
-    return wrapper
-
-
 class Repository(object):
 
     BLANK_STATE = {
         'files': {}
     }
 
-    repo_dir = None
-    _state = None
+    _repo_dir = None
+    _state_file = None
 
-    def __init__(self, repo_dir):
+    def __init__(self, config_dir):
 
-        self.repo_dir = repo_dir
+        self._repo_dir = os.path.join(config_dir, 'repo')
+        self._state_file = os.path.join(self._repo_dir, 'repo.json')
 
-        utils.smkdir(self.repo_dir)
+        utils.smkdir(self._repo_dir)
 
-        state_file = os.path.join(self.repo_dir, 'repo.json')
+        if not os.path.exists(self._state_file):
+            writer.dump(obj=self.BLANK_STATE, file_path=self._state_file, fmt=constants.JSON)
 
-        if not os.path.exists(state_file):
-            writer.dump(obj=self.BLANK_STATE, file_path=state_file, fmt=constants.JSON)
+    @property
+    def root(self):
+        return self._repo_dir
 
-        self._state = parser.load(file_path=state_file, fmt=constants.JSON)
-
-    @_state_change
     def add(self, alias, file_path, fmt):
 
         file_path = os.path.abspath(file_path)
@@ -91,37 +60,56 @@ class Repository(object):
             raise exceptions.FileIsDirectoryException(file_path=file_path)
 
         if self._exists(alias):
-            raise exceptions.FileAlreadyExistsException(file_path=file_path)
+            raise exceptions.AliasAlreadyExistsException(alias=alias)
 
         parser.load(file_path=file_path, fmt=fmt)
 
-        self._state['files'][alias] = {'file_path': file_path, 'fmt': fmt}
+        state = self._load_state()
+        state['files'][alias] = {'file_path': file_path, 'fmt': fmt}
+
+        self._save_state(state)
+
         self.commit(alias)
 
-    @_state_change
     def remove(self, alias):
 
         if not self._exists(alias):
             raise exceptions.AliasNotFoundException(alias=alias)
 
-        del self._state['files'][alias]
+        state = self._load_state()
+        del state['files'][alias]
+
+        self._save_state(state)
+
+        shutil.rmtree(os.path.join(self._repo_dir, alias))
 
     def path(self, alias):
 
         if not self._exists(alias):
             raise exceptions.AliasNotFoundException(alias=alias)
 
-        return self._state['files'][alias]['file_path']
+        state = self._load_state()
+
+        return state['files'][alias]['file_path']
 
     def fmt(self, alias):
-        return self._state['files'][alias]['fmt']
+
+        if not self._exists(alias):
+            raise exceptions.AliasNotFoundException(alias=alias)
+
+        state = self._load_state()
+
+        return state['files'][alias]['fmt']
 
     def commit(self, alias):
 
-        utils.smkdir(os.path.join(self.repo_dir, alias))
+        if not self._exists(alias):
+            raise exceptions.AliasNotFoundException(alias=alias)
+
+        utils.smkdir(os.path.join(self._repo_dir, alias))
 
         version = self._find_current_version(alias) + 1
-        shutil.copy(src=self.path(alias), dst=os.path.join(self.repo_dir, alias, str(version)))
+        shutil.copy(src=self.path(alias), dst=os.path.join(self._repo_dir, alias, str(version)))
 
     def revisions(self, alias):
 
@@ -130,8 +118,8 @@ class Repository(object):
 
         revisions = []
 
-        for version in utils.lsf(os.path.join(self.repo_dir, alias)):
-            timestamp = os.path.getmtime(os.path.join(self.repo_dir, alias, version))
+        for version in utils.lsf(os.path.join(self._repo_dir, alias)):
+            timestamp = os.path.getmtime(os.path.join(self._repo_dir, alias, version))
             revisions.append(Revision(alias=alias,
                                       file_path=self.path(alias),
                                       timestamp=timestamp,
@@ -141,8 +129,10 @@ class Repository(object):
 
     def files(self):
 
+        state = self._load_state()
+
         result = []
-        for alias in self._state['files']:
+        for alias in state['files']:
             result.append(File(alias=alias,
                                file_path=self.path(alias),
                                fmt=self.fmt(alias)))
@@ -154,26 +144,37 @@ class Repository(object):
         if not self._exists(alias):
             raise exceptions.AliasNotFoundException(alias=alias)
 
-        file_path = os.path.join(self.repo_dir, alias, version)
+        if version == 'latest':
+            version = max([revision.version for revision in self.revisions(alias)])
+
+        file_path = os.path.join(self._repo_dir, alias, str(version))
 
         if not os.path.exists(file_path):
-            raise exceptions.VersionNotFoundException(file_path=alias, version=version)
+            raise exceptions.VersionNotFoundException(alias=alias, version=version)
 
         with open(file_path) as f:
             return f.read()
 
     def _exists(self, alias):
 
-        return alias in self._state['files']
+        state = self._load_state()
+
+        return alias in state['files']
 
     def _find_current_version(self, alias):
 
-        versions = utils.lsf(os.path.join(self.repo_dir, alias))
+        versions = utils.lsf(os.path.join(self._repo_dir, alias))
 
         if not versions:
             return -1
 
         return max([int(version) for version in versions])
+
+    def _load_state(self):
+        return parser.load(file_path=self._state_file, fmt=constants.JSON)
+
+    def _save_state(self, state):
+        writer.dump(obj=state, file_path=self._state_file, fmt=constants.JSON)
 
 
 # pylint: disable=too-few-public-methods

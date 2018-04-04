@@ -22,10 +22,12 @@ import click
 
 from fileconfig.api.patcher import Patcher
 from fileconfig.api import parser
+from fileconfig.api import exceptions
 from fileconfig.api.repository import Repository
-from fileconfig.shell import handle_exceptions
-from fileconfig.shell.commands import configurer as configurer_group
+from fileconfig.shell.commands import configure as configurer_group
 from fileconfig.shell.commands import repository as repository_group
+from fileconfig.shell import solutions, handle_exceptions, causes
+from fileconfig.shell import PROGRAM_NAME
 
 
 @click.group()
@@ -34,20 +36,38 @@ from fileconfig.shell.commands import repository as repository_group
 def app(ctx):
 
     # initialize the repository object
-    repo = Repository('{0}/.fileconfig/repo'.format(os.path.expanduser('~')))
+    repo = Repository(os.path.join(os.path.expanduser('~'), '.{0}'.format(PROGRAM_NAME)))
     ctx.repo = repo
 
 
 @click.group()
 @click.pass_context
-@click.option('--alias', required=True)
-def configurer(ctx, alias):
+@click.argument('alias', required=True)
+@handle_exceptions
+def configure(ctx, alias):
 
     repo = ctx.parent.repo
 
     file_path = repo.path(alias)
 
-    parsed = parser.load(file_path=file_path, fmt=repo.fmt(alias))
+    try:
+        parsed = parser.load(file_path=file_path, fmt=repo.fmt(alias))
+    except exceptions.CorruptFileException as e:
+        e.cause = causes.EDITED_MANUALLY
+        e.possible_solutions = [solutions.edit_manually(), solutions.reset_to_latest(alias)]
+        raise
+
+    # detect if the file was manually edited since the last command.
+    # if so, warn because it means the current version of the file is not
+    # under version control and will be lost after the change
+    latest = parser.loads(repo.contents(alias=alias, version='latest'), fmt=repo.fmt(alias))
+    if latest != parsed:
+
+        exception = click.ClickException(message='Cannot perform operation')
+        exception.cause = causes.DIFFER_FROM_LATEST
+        exception.possible_solutions = [solutions.reset_to_latest(alias), solutions.commit(alias)]
+        raise exception
+
     patcher = Patcher(parsed)
     ctx.patcher = patcher
 
@@ -57,20 +77,22 @@ def repository():
     pass
 
 
-configurer.add_command(configurer_group.put)
-configurer.add_command(configurer_group.add)
-configurer.add_command(configurer_group.delete)
-configurer.add_command(configurer_group.remove)
-configurer.add_command(configurer_group.get)
+configure.add_command(configurer_group.put)
+configure.add_command(configurer_group.add)
+configure.add_command(configurer_group.delete)
+configure.add_command(configurer_group.remove)
+configure.add_command(configurer_group.get)
 
 repository.add_command(repository_group.show)
 repository.add_command(repository_group.revisions)
 repository.add_command(repository_group.files)
 repository.add_command(repository_group.reset)
 repository.add_command(repository_group.add)
+repository.add_command(repository_group.remove)
+repository.add_command(repository_group.commit)
 
 app.add_command(repository)
-app.add_command(configurer)
+app.add_command(configure)
 
 # allows running the application as a single executable
 # created by pyinstaller

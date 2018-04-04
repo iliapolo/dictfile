@@ -14,15 +14,38 @@
 #   * limitations under the License.
 #
 #############################################################################
-
+from functools import wraps
 
 import click
 
 from fileconfig.api import writer
 from fileconfig.api import constants
 from fileconfig.api import exceptions
-from fileconfig.shell import commit
 from fileconfig.shell import handle_exceptions
+
+
+def commit(func):
+
+    def _lookup_context(*args):
+
+        for arg in args:
+            if isinstance(arg, click.core.Context):
+                return arg
+
+        return None
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        ctx = _lookup_context(*args)
+
+        alias = ctx.parent.params['alias']
+
+        func(*args, **kwargs)
+
+        ctx.parent.parent.repo.commit(alias)
+
+    return wrapper
 
 
 @click.command()

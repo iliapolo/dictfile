@@ -1,3 +1,4 @@
+#############################################################################
 # Copyright (c) 2018 Eli Polonsky. All rights reserved
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,30 +15,10 @@
 #
 #############################################################################
 
-import os
-import shutil
-import tempfile
 
-import pytest
+EDITED_MANUALLY = 'This is probably as a result of someone manually editing the file.'
 
-
-@pytest.fixture()
-def temp_file():
-
-    file_path = tempfile.mkstemp()[1]
-
-    yield file_path
-
-    # cleanup
-    os.remove(file_path)
-
-
-@pytest.fixture()
-def temp_dir():
-
-    dir_path = tempfile.mkdtemp()
-
-    yield dir_path
-
-    # cleanup
-    shutil.rmtree(dir_path)
+DIFFER_FROM_LATEST = 'The contents of the file differ from the latest version.\n' \
+                     'Once you modify this file, you will not be able to ' \
+                     'revert this change.\nThis probably is as a result of someone manually ' \
+                     'editing the file.'

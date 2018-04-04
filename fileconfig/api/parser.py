@@ -17,6 +17,7 @@
 
 import javaproperties
 import yaml
+from yaml.scanner import ScannerError
 
 from fileconfig.api import exceptions
 from fileconfig.api import constants
@@ -25,7 +26,10 @@ from fileconfig.api import constants
 def load(file_path, fmt):
 
     with open(file_path) as stream:
-        return loads(stream.read(), fmt=fmt)
+        try:
+            return loads(stream.read(), fmt=fmt)
+        except ScannerError as e:
+            raise exceptions.CorruptFileException(file_path=file_path, message=str(e))
 
 
 def loads(string, fmt):

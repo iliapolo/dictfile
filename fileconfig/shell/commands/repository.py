@@ -20,7 +20,9 @@ import datetime
 import click
 from prettytable import PrettyTable
 
-from fileconfig.shell import handle_exceptions
+from fileconfig.shell import solutions, handle_exceptions, causes
+from fileconfig.api import parser
+from fileconfig.api import exceptions
 
 
 @click.command()
@@ -36,6 +38,15 @@ def add(ctx, alias, file_path, fmt):
 
 @click.command()
 @click.option('--alias', required=True)
+@click.pass_context
+@handle_exceptions
+def remove(ctx, alias):
+
+    ctx.parent.parent.repo.remove(alias=alias)
+
+
+@click.command()
+@click.option('--alias', required=True)
 @click.option('--version', required=True)
 @click.pass_context
 @handle_exceptions
@@ -43,7 +54,12 @@ def show(ctx, alias, version):
 
     repo = ctx.parent.parent.repo
 
-    click.echo(repo.contents(alias, version))
+    if version == 'current':
+        with open(repo.path(alias)) as stream:
+            click.echo(stream.read())
+
+    else:
+        click.echo(repo.contents(alias, version))
 
 
 @click.command()
@@ -91,5 +107,23 @@ def reset(ctx, alias, version):
 
     with open(repo.path(alias), 'w') as f:
         f.write(repo.contents(alias, version))
+
+    repo.commit(alias)
+
+
+@click.command()
+@click.option('--alias', required=True)
+@click.pass_context
+@handle_exceptions
+def commit(ctx, alias):
+
+    repo = ctx.parent.parent.repo
+
+    try:
+        parser.load(file_path=repo.path(alias), fmt=repo.fmt(alias))
+    except exceptions.CorruptFileException as e:
+        e.cause = causes.EDITED_MANUALLY
+        e.possible_solutions = [solutions.edit_manually(), solutions.reset_to_latest(alias)]
+        raise
 
     repo.commit(alias)
