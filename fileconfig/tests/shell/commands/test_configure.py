@@ -23,7 +23,7 @@ import pytest
 from fileconfig.api import constants
 from fileconfig.api import exceptions
 from fileconfig.api import writer
-from fileconfig.shell import PROGRAM_NAME
+from fileconfig.api.constants import PROGRAM_NAME
 from fileconfig.shell import solutions, build_info, causes
 from fileconfig.tests.shell.commands import CommandLineFixture
 from fileconfig.tests.shell.commands import Runner
@@ -270,11 +270,14 @@ def test_delete(configure):
         },
         fmt=configure.fmt)
 
-    configure.run('delete --key key1')
+    result = configure.run('delete --key key1')
 
     actual = read_file(configure=configure)
 
+    expected_deleted_value = 'value1'
+
     assert expected == actual
+    assert expected_deleted_value + '\n' == result.output
 
 
 def test_get(configure):
@@ -376,6 +379,7 @@ def test_add(configure):
     if fmt not in constants.COMPOUND_FORMATS:
         expected = 'Error: Unsupported operation: add (format={0}) \n'.format(fmt)
         actual = result.output
+        assert expected == actual
     else:
         expected = writer.dumps(
             obj={
@@ -384,7 +388,11 @@ def test_add(configure):
             fmt=fmt)
         actual = read_file(configure=configure)
 
-    assert expected == actual
+        assert expected == actual
+
+        expected = writer.dumps(obj=['value1', 'value2'], fmt=fmt)
+
+        assert expected + '\n' == result.output
 
 
 def test_add_to_complex_key(configure):
@@ -432,6 +440,7 @@ def test_remove(configure):
     if fmt not in constants.COMPOUND_FORMATS:
         expected = 'Error: Unsupported operation: remove (format={0}) \n'.format(fmt)
         actual = result.output
+        assert expected == actual
     else:
         expected = writer.dumps(
             obj={
@@ -440,7 +449,11 @@ def test_remove(configure):
             fmt=configure.fmt)
         actual = read_file(configure=configure)
 
-    assert expected == actual
+        assert expected == actual
+
+        expected = writer.dumps(obj=['value1'], fmt=fmt)
+
+        assert expected + '\n' == result.output
 
 
 def test_remove_from_complex_key(configure):

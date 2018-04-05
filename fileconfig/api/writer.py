@@ -47,13 +47,11 @@ def dumps(obj, fmt):
         # only dictionaries can be represented as a string
         # in the java properties file format
         if not isinstance(obj, dict):
-            raise exceptions.InvalidValueTypeException(key=None,
-                                                       expected_type=dict,
+            raise exceptions.InvalidValueTypeException(expected_types=[dict],
                                                        actual_type=type(obj))
         for key, value in obj.items():
             if isinstance(value, (dict, list, set)):
-                raise exceptions.InvalidValueTypeException(key=key,
-                                                           expected_type='str, int, float',
+                raise exceptions.InvalidValueTypeException(expected_types=[str, int, float],
                                                            actual_type=type(value))
             obj[key] = str(value)
 

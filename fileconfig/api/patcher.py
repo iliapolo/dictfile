@@ -21,6 +21,7 @@ from fileconfig.api import exceptions
 from fileconfig.api import parser
 from fileconfig.api import writer
 from fileconfig.api import constants
+from fileconfig.api import logger
 
 
 class Patcher(object):
@@ -68,8 +69,9 @@ class Patcher(object):
     """
 
     _fdict = {}
+    _logger = None
 
-    def __init__(self, dictionary):
+    def __init__(self, dictionary, log_level='info'):
 
         """Instantiate a Patcher instance.
 
@@ -80,6 +82,8 @@ class Patcher(object):
         """
 
         self._fdict = flatdict.FlatDict(dictionary)
+        self._logger = logger.get_logger('{0}.api.patcher.Patcher'
+                                         .format(constants.PROGRAM_NAME), level=log_level)
 
     def set(self, key, value):
 
@@ -88,7 +92,7 @@ class Patcher(object):
         Args:
 
             key (str): The key to operate on.
-            value (str): The value of the key.
+            value (str, unicode): The value of the key.
 
         Returns:
 
@@ -148,12 +152,16 @@ class Patcher(object):
 
         return str(value)
 
-    @staticmethod
-    def _deserialize(value):
+    def _deserialize(self, value):
+
+        if not isinstance(value, (str, unicode)):
+            raise exceptions.InvalidValueTypeException(expected_types=[str, unicode],
+                                                       actual_type=type(value))
 
         # this is not in-lined because it easier to debug
         # this way. note that if the value is a primitive, yaml
         # will return the correct type as well.
+        self._logger.debug('De-serializing value: {0}'.format(value))
         parsed = parser.loads(string=value, fmt=constants.YAML)
         return parsed
 
@@ -161,7 +169,7 @@ class Patcher(object):
 
         value = self._fdict[key]
         if not isinstance(value, list):
-            raise exceptions.InvalidValueTypeException(
+            raise exceptions.InvalidKeyTypeException(
                 key=key,
-                expected_type=list,
+                expected_types=[list],
                 actual_type=type(value))

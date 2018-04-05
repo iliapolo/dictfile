@@ -22,7 +22,7 @@ import pytest
 from prettytable import PrettyTable
 
 from fileconfig.api import writer, constants, exceptions
-from fileconfig.shell import PROGRAM_NAME
+from fileconfig.api.constants import PROGRAM_NAME
 from fileconfig.shell import build_info, solutions, causes
 from fileconfig.tests.shell.commands import CommandLineFixture
 

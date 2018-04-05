@@ -24,6 +24,7 @@ from fileconfig.api import exceptions
 from fileconfig.api import parser
 from fileconfig.api import writer
 from fileconfig.api import constants
+from fileconfig.api import logger
 
 
 class Repository(object):
@@ -34,11 +35,14 @@ class Repository(object):
 
     _repo_dir = None
     _state_file = None
+    _logger = None
 
-    def __init__(self, config_dir):
+    def __init__(self, config_dir, log_level='info'):
 
         self._repo_dir = os.path.join(config_dir, 'repo')
         self._state_file = os.path.join(self._repo_dir, 'repo.json')
+        self._logger = logger.get_logger('{0}.api.repository.Repository'
+                                         .format(constants.PROGRAM_NAME), level=log_level)
 
         utils.smkdir(self._repo_dir)
 
@@ -52,6 +56,7 @@ class Repository(object):
     def add(self, alias, file_path, fmt):
 
         file_path = os.path.abspath(file_path)
+        self._logger.debug('Absolute path translation resulted in {0}'.format(file_path))
 
         if not os.path.exists(file_path):
             raise exceptions.FileNotFoundException(file_path=file_path)
@@ -62,6 +67,7 @@ class Repository(object):
         if self._exists(alias):
             raise exceptions.AliasAlreadyExistsException(alias=alias)
 
+        self._logger.debug('Verifying the file can be parsed to {0}'.format(fmt))
         parser.load(file_path=file_path, fmt=fmt)
 
         state = self._load_state()
@@ -69,6 +75,8 @@ class Repository(object):
 
         self._save_state(state)
 
+        self._logger.debug('Committing this file ({0}) to retain its original version'
+                           .format(file_path))
         self.commit(alias)
 
     def remove(self, alias):
@@ -81,7 +89,9 @@ class Repository(object):
 
         self._save_state(state)
 
-        shutil.rmtree(os.path.join(self._repo_dir, alias))
+        alias_dir = os.path.join(self._repo_dir, alias)
+        self._logger.debug('Deleting directory: {0}'.format(alias_dir))
+        shutil.rmtree(alias_dir)
 
     def path(self, alias):
 
@@ -109,7 +119,12 @@ class Repository(object):
         utils.smkdir(os.path.join(self._repo_dir, alias))
 
         version = self._find_current_version(alias) + 1
-        shutil.copy(src=self.path(alias), dst=os.path.join(self._repo_dir, alias, str(version)))
+
+        src = self.path(alias)
+        dst = os.path.join(self._repo_dir, alias, str(version))
+
+        self._logger.debug('Copying {0} --> {1}'.format(src, dst))
+        shutil.copy(src=src, dst=dst)
 
     def revisions(self, alias):
 
@@ -119,6 +134,7 @@ class Repository(object):
         revisions = []
 
         for version in utils.lsf(os.path.join(self._repo_dir, alias)):
+            self._logger.debug('Found version {0} for alias {1}'.format(version, alias))
             timestamp = os.path.getmtime(os.path.join(self._repo_dir, alias, version))
             revisions.append(Revision(alias=alias,
                                       file_path=self.path(alias),
@@ -133,6 +149,7 @@ class Repository(object):
 
         result = []
         for alias in state['files']:
+            self._logger.debug('Found alias: {0}'.format(alias))
             result.append(File(alias=alias,
                                file_path=self.path(alias),
                                fmt=self.fmt(alias)))
@@ -146,6 +163,7 @@ class Repository(object):
 
         if version == 'latest':
             version = max([revision.version for revision in self.revisions(alias)])
+            self._logger.debug("Converted version 'latest' to last version: {0}".format(version))
 
         file_path = os.path.join(self._repo_dir, alias, str(version))
 
@@ -153,6 +171,7 @@ class Repository(object):
             raise exceptions.VersionNotFoundException(alias=alias, version=version)
 
         with open(file_path) as f:
+            self._logger.debug('Returning contents of file {0}'.format(file_path))
             return f.read()
 
     def _exists(self, alias):

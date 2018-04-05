@@ -47,6 +47,7 @@ setup(
         'javaproperties==0.4.0',
         'prettytable==0.7.2',
         'PyYAML==3.12',
-        'six==1.11.0'
+        'six==1.11.0',
+        'wryte==0.2.1'
     ]
 )

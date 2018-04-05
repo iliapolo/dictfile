@@ -21,7 +21,7 @@ from click.testing import CliRunner
 from fileconfig.api import logger
 from fileconfig.api.repository import Repository
 from fileconfig.main import app
-from fileconfig.shell import PROGRAM_NAME
+from fileconfig.api.constants import PROGRAM_NAME
 
 
 # pylint: disable=too-few-public-methods

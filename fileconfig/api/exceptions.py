@@ -81,18 +81,31 @@ class KeyNotFoundException(ApiException):
         return "Key '{0}' does not exist".format(self.key)
 
 
+class InvalidKeyTypeException(ApiException):
+
+    def __init__(self, key, expected_types, actual_type):
+        self.expected_types = expected_types
+        self.actual_type = actual_type
+        self.key = key
+        super(InvalidKeyTypeException, self).__init__(self.__str__())
+
+    def __str__(self):
+        return "Invalid key type: {0}. Expected: {1}, Actual: {2}".format(
+            self.key,
+            ','.join([str(t) for t in self.expected_types]),
+            self.actual_type)
+
+
 class InvalidValueTypeException(ApiException):
 
-    def __init__(self, key, expected_type, actual_type):
-        self.expected_type = expected_type
-        self.key = key
+    def __init__(self, expected_types, actual_type):
+        self.expected_types = expected_types
         self.actual_type = actual_type
         super(InvalidValueTypeException, self).__init__(self.__str__())
 
     def __str__(self):
-        return "Invalid value type for key '{0}. Expected: {1}, Actual: {2}".format(
-            self.key,
-            self.expected_type,
+        return "Invalid value type. Expected: {0}, Actual: {1}".format(
+            ','.join([str(t) for t in self.expected_types]),
             self.actual_type)
 
 

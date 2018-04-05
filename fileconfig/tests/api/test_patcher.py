@@ -68,6 +68,27 @@ def test_set():
     assert expected_dictionary == dictionary
 
 
+def test_set_unicode():
+
+    dictionary = {'key1': 'value1'}
+
+    expected_dictionary = {'key1': 'value2'}
+
+    patcher = Patcher(dictionary)
+    dictionary = patcher.set('key1', u'value2').finish()
+
+    assert expected_dictionary == dictionary
+
+
+def test_set_not_string():
+
+    dictionary = {'key1': 'value1'}
+
+    patcher = Patcher(dictionary)
+    with pytest.raises(exceptions.InvalidValueTypeException):
+        patcher.set('key1', 5).finish()
+
+
 def test_set_dict():
 
     dictionary = {'key1': 'value1'}
@@ -454,7 +475,7 @@ def test_add_to_non_list():
 
     patcher = Patcher(dictionary)
 
-    with pytest.raises(exceptions.InvalidValueTypeException):
+    with pytest.raises(exceptions.InvalidKeyTypeException):
         patcher.add(key='key', value='value2')
 
 

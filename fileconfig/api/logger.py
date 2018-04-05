@@ -15,31 +15,37 @@
 #
 #############################################################################
 
-import coloredlogger
+import wryte
+
+
+loggers = {}
 
 
 class Logger(object):
 
     _logger = None
 
-    def __init__(self, name=None):
-        self._logger = coloredlogger.get_logger(name)
+    def __init__(self, name=None, level=None):
+        self._logger = wryte.Wryte(name)
+        self._logger.set_level(level)
 
     def info(self, message):
         self._logger.info(message)
 
     def warning(self, message):
-        self._logger.wtf(message)
+        self._logger.warning(message)
 
     def warn(self, message):
-        self.warning(message)
+        self._logger.warn(message)
 
     def error(self, message):
         self._logger.error(message)
 
     def debug(self, message):
-        self._logger.verbose(message)
+        self._logger.debug(message)
 
 
-def get_logger(name):
-    return Logger(name)
+def get_logger(name, level='info'):
+    if name not in loggers:
+        loggers[name] = Logger(name, level)
+    return loggers[name]

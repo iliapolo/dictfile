@@ -21,9 +21,6 @@ import click
 from fileconfig.api import exceptions
 
 
-PROGRAM_NAME = 'fileconfig'
-
-
 def handle_exceptions(func):
 
     @wraps(func)

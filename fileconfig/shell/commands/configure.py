@@ -14,6 +14,7 @@
 #   * limitations under the License.
 #
 #############################################################################
+
 from functools import wraps
 
 import click
@@ -96,6 +97,8 @@ def add(ctx, key, value):
 
     write_result(patched, ctx)
 
+    click.echo(ctx.parent.patcher.get(key, fmt=fmt))
+
 
 @click.command()
 @click.option('--key', required=True)
@@ -112,9 +115,13 @@ def delete(ctx, key):
         raise exceptions.UnsupportedOperationException(fmt=fmt,
                                                        operation='delete with complex keys')
 
+    value = ctx.parent.patcher.get(key=key, fmt=fmt)
+
     patched = ctx.parent.patcher.delete(key=key).finish()
 
     write_result(patched, ctx)
+
+    click.echo(value)
 
 
 @click.command()
@@ -154,6 +161,8 @@ def remove(ctx, key, value):
     patched = ctx.parent.patcher.remove(key=key, value=value).finish()
 
     write_result(patched, ctx)
+
+    click.echo(ctx.parent.patcher.get(key, fmt=fmt))
 
 
 def write_result(result, ctx):

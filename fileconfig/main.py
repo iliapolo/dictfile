@@ -27,17 +27,23 @@ from fileconfig.api.repository import Repository
 from fileconfig.shell.commands import configure as configurer_group
 from fileconfig.shell.commands import repository as repository_group
 from fileconfig.shell import solutions, handle_exceptions, causes
-from fileconfig.shell import PROGRAM_NAME
+from fileconfig.api.constants import PROGRAM_NAME
 
 
+# pylint: disable=no-value-for-parameter
 @click.group()
+@click.option('--debug', is_flag=True)
 @click.pass_context
 @handle_exceptions
-def app(ctx):
+def app(ctx, debug):
+
+    log_level = 'debug' if debug else 'info'
 
     # initialize the repository object
-    repo = Repository(os.path.join(os.path.expanduser('~'), '.{0}'.format(PROGRAM_NAME)))
+    repo = Repository(os.path.join(os.path.expanduser('~'), '.{0}'.format(PROGRAM_NAME)),
+                      log_level=log_level)
     ctx.repo = repo
+    ctx.debug = debug
 
 
 @click.group()
@@ -68,7 +74,9 @@ def configure(ctx, alias):
         exception.possible_solutions = [solutions.reset_to_latest(alias), solutions.commit(alias)]
         raise exception
 
-    patcher = Patcher(parsed)
+    log_level = 'debug' if ctx.parent.debug else 'info'
+
+    patcher = Patcher(parsed, log_level=log_level)
     ctx.patcher = patcher
 
 
