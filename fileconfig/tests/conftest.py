@@ -41,3 +41,15 @@ def temp_dir():
 
     # cleanup
     shutil.rmtree(dir_path)
+
+
+@pytest.fixture()
+def home_dir():
+
+    homedir = tempfile.mkdtemp()
+    os.environ['HOME'] = homedir
+
+    yield homedir
+
+    # cleanup
+    shutil.rmtree(homedir)

@@ -16,8 +16,6 @@
 
 import copy
 import os
-import shutil
-import tempfile
 
 import click
 import pytest
@@ -25,67 +23,39 @@ import pytest
 from fileconfig.api import constants
 from fileconfig.api import exceptions
 from fileconfig.api import writer
-from fileconfig.api.repository import Repository
-from fileconfig.shell import solutions, build_info, causes
-from fileconfig.tests.shell.commands import Runner
 from fileconfig.shell import PROGRAM_NAME
-
+from fileconfig.shell import solutions, build_info, causes
+from fileconfig.tests.shell.commands import CommandLineFixture
+from fileconfig.tests.shell.commands import Runner
 
 TEST_DICT = {'key1': 'value1'}
 
 
 @pytest.fixture(name='configure', params=constants.SUPPORTED_FORMATS)
-def conf(request):
+def conf(request, home_dir):
 
-    class Configure(object):
-
-        def __init__(self, _request):
-            super(Configure, self).__init__()
-            self._request = _request
-            self._runner = Runner()
-            self._repo = Repository(os.path.join(tempdir, '.{0}'.format(PROGRAM_NAME)))
+    class Configure(CommandLineFixture):
 
         def run(self, command, catch_exceptions=False):
 
-            command = 'fileconfig configure {0} {1}'.format(self.alias, command)
+            command = '{0} configure {1} {2}'.format(PROGRAM_NAME, self.alias, command)
 
             return self._runner.run(command, catch_exceptions=catch_exceptions)
 
-        @property
-        def repo(self):
-            return self._repo
-
-        @property
-        def alias(self):
-            return self._request.node.name
-
-        @property
-        def fmt(self):
-            return self._request.param
-
-    # change the home directory because the configuration
-    # folder is created there, and we don't want to pollute the actual
-    # home directory.
-    tempdir = tempfile.mkdtemp()
-    os.environ['HOME'] = tempdir
-
-    configure = Configure(request)
+    configure = Configure(request, home_dir)
 
     # create the file we intent to operate on
-    file_path = os.path.join(tempdir, configure.alias)
+    file_path = os.path.join(home_dir, configure.alias)
     writer.dump(obj=TEST_DICT,
                 file_path=file_path,
                 fmt=configure.fmt)
 
     # add the file to the repository
-    Runner().run('fileconfig repository add --alias {0} --file-path {1} --fmt {2}'
-                 .format(configure.alias, file_path, configure.fmt),
+    Runner().run('{0} repository add --alias {1} --file-path {2} --fmt {3}'
+                 .format(PROGRAM_NAME, configure.alias, file_path, configure.fmt),
                  catch_exceptions=False)
 
     yield configure
-
-    # cleanup
-    shutil.rmtree(tempdir)
 
 
 def read_file(configure):

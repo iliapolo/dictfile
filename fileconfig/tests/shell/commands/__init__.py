@@ -14,11 +14,14 @@
 #   * limitations under the License.
 #
 #############################################################################
+import os
 
 from click.testing import CliRunner
 
 from fileconfig.api import logger
+from fileconfig.api.repository import Repository
 from fileconfig.main import app
+from fileconfig.shell import PROGRAM_NAME
 
 
 # pylint: disable=too-few-public-methods
@@ -27,7 +30,7 @@ class Runner(object):
     def __init__(self):
         super(Runner, self).__init__()
         self._runner = CliRunner()
-        self.log = logger.get_logger('fileconfig.tests.shell.commands:Runner')
+        self.log = logger.get_logger('{0}.tests.shell.commands:Runner'.format(PROGRAM_NAME))
 
     def run(self, command, catch_exceptions=False):
 
@@ -40,3 +43,27 @@ class Runner(object):
             raise SystemExit(result.output)
 
         return result
+
+
+class CommandLineFixture(object):
+
+    def __init__(self, _request, home_dir):
+        super(CommandLineFixture, self).__init__()
+        self._request = _request
+        self._runner = Runner()
+        self._repo = Repository(os.path.join(home_dir, '.{0}'.format(PROGRAM_NAME)))
+
+    @property
+    def repo(self):
+        return self._repo
+
+    @property
+    def alias(self):
+        return self._request.node.name
+
+    @property
+    def fmt(self):
+        return self._request.param
+
+    def run(self, command, catch_exceptions=False):
+        raise NotImplementedError()

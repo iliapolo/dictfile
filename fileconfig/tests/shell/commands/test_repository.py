@@ -17,74 +17,38 @@
 import copy
 import datetime
 import os
-import shutil
-import tempfile
 
 import pytest
 from prettytable import PrettyTable
 
 from fileconfig.api import writer, constants, exceptions
-from fileconfig.api.repository import Repository as ApiRepository
-from fileconfig.shell import build_info, solutions, causes
-from fileconfig.tests.shell.commands import Runner
 from fileconfig.shell import PROGRAM_NAME
-
+from fileconfig.shell import build_info, solutions, causes
+from fileconfig.tests.shell.commands import CommandLineFixture
 
 TEST_DICT = {'key1': 'value1'}
 
 
 @pytest.fixture(name='repository', params=constants.SUPPORTED_FORMATS)
-def repo(request):
+def repo(request, home_dir):
 
-    class Repository(object):
-
-        def __init__(self, _request):
-            super(Repository, self).__init__()
-            self._request = _request
-            self._runner = Runner()
-            self._repo = ApiRepository(os.path.join(tempdir, '.{0}'.format(PROGRAM_NAME)))
+    class Repository(CommandLineFixture):
 
         def run(self, command, catch_exceptions=False):
 
-            command = 'fileconfig repository {0}'.format(command)
+            command = '{0} repository {1}'.format(PROGRAM_NAME, command)
 
             return self._runner.run(command, catch_exceptions=catch_exceptions)
 
-        @property
-        def request(self):
-            return self._request
-
-        @property
-        def repo(self):
-            return self._repo
-
-        @property
-        def alias(self):
-            return self._request.node.name
-
-        @property
-        def fmt(self):
-            return self._request.param
-
-    # change the home directory because the configuration
-    # folder is created there, and we don't want to pollute the actual
-    # home directory.
-    tempdir = tempfile.mkdtemp()
-    os.environ['HOME'] = tempdir
-
-    repository = Repository(request)
+    repository = Repository(request, home_dir)
 
     # create the file we intent to alias
-    file_path = os.path.join(tempdir, repository.alias)
+    file_path = os.path.join(home_dir, repository.alias)
     writer.dump(obj=TEST_DICT, file_path=file_path, fmt=repository.fmt)
-    Runner().run('fileconfig repository add --alias {0} --file-path {1} --fmt {2}'
-                 .format(repository.alias, file_path, repository.fmt),
-                 catch_exceptions=False)
+    repository.run('add --alias {0} --file-path {1} --fmt {2}'
+                   .format(repository.alias, file_path, repository.fmt))
 
     yield repository
-
-    # cleanup
-    shutil.rmtree(tempdir)
 
 
 def test_add_no_file(repository):
