@@ -133,6 +133,7 @@ class Patcher(object):
     def get(self, key, fmt=constants.JSON):
 
         try:
+            self._logger.debug('Fetching value for key {0}'.format(key))
             value = self._fdict[key]
             return self._serialize(value, fmt)
         except KeyError:
@@ -141,13 +142,18 @@ class Patcher(object):
     def finish(self):
         return self._fdict.as_dict()
 
-    @staticmethod
-    def _serialize(value, fmt):
+    def _serialize(self, value, fmt):
+
+        self._logger.debug('Serializing value ({0}): {1}'.format(type(value), value))
 
         if isinstance(value, flatdict.FlatDict):
             value = value.as_dict()
 
         if isinstance(value, (dict, list, set)):
+            if fmt == constants.INI:
+                # an ini dictionary is actually
+                # a properties file, not an ini
+                fmt = constants.PROPERTIES
             value = writer.dumps(value, fmt=fmt)
 
         return str(value)

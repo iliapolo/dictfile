@@ -15,6 +15,7 @@
 #
 #############################################################################
 
+import configparser
 import StringIO
 import json
 
@@ -56,6 +57,15 @@ def dumps(obj, fmt):
             obj[key] = str(value)
 
         return javaproperties.dumps(props=obj, timestamp=False)
+
+    elif fmt == constants.INI:
+
+        ini_parser = configparser.ConfigParser()
+        string = StringIO.StringIO()
+        ini_parser.read_dict(dictionary=obj)
+        ini_parser.write(fp=string, space_around_delimiters=False)
+
+        return string.getvalue()
 
     else:
         raise exceptions.UnsupportedFormatException(fmt=fmt)

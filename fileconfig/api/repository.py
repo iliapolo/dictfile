@@ -27,6 +27,9 @@ from fileconfig.api import constants
 from fileconfig.api import logger
 
 
+ADD_COMMIT_MESSAGE = 'original version committed automatically upon adding the file'
+
+
 class Repository(object):
 
     BLANK_STATE = {
@@ -55,6 +58,9 @@ class Repository(object):
 
     def add(self, alias, file_path, fmt):
 
+        if ' ' in alias or os.sep in alias:
+            raise exceptions.IllegalAliasException(alias=alias)
+
         file_path = os.path.abspath(file_path)
         self._logger.debug('Absolute path translation resulted in {0}'.format(file_path))
 
@@ -77,7 +83,7 @@ class Repository(object):
 
         self._logger.debug('Committing this file ({0}) to retain its original version'
                            .format(file_path))
-        self.commit(alias)
+        self.commit(alias, message=ADD_COMMIT_MESSAGE)
 
     def remove(self, alias):
 
@@ -111,7 +117,7 @@ class Repository(object):
 
         return state['files'][alias]['fmt']
 
-    def commit(self, alias):
+    def commit(self, alias, message=None):
 
         if not self._exists(alias):
             raise exceptions.AliasNotFoundException(alias=alias)
@@ -121,10 +127,18 @@ class Repository(object):
         version = self._find_current_version(alias) + 1
 
         src = self.path(alias)
-        dst = os.path.join(self._repo_dir, alias, str(version))
+        revision_dir = os.path.join(self._repo_dir, alias, str(version))
+        utils.smkdir(revision_dir)
+        dst = os.path.join(revision_dir, 'contents')
 
         self._logger.debug('Copying {0} --> {1}'.format(src, dst))
         shutil.copy(src=src, dst=dst)
+
+        commit_message_file = os.path.join(revision_dir, 'commit-message')
+
+        self._logger.debug('Creating a commit message file: {0}'.format(commit_message_file))
+        with open(commit_message_file, 'w') as stream:
+            stream.write(message or '')
 
     def revisions(self, alias):
 
@@ -133,13 +147,14 @@ class Repository(object):
 
         revisions = []
 
-        for version in utils.lsf(os.path.join(self._repo_dir, alias)):
-            self._logger.debug('Found version {0} for alias {1}'.format(version, alias))
+        for version in utils.lsd(os.path.join(self._repo_dir, alias)):
+            self._logger.debug('Found revision {0} for alias {1}'.format(version, alias))
             timestamp = os.path.getmtime(os.path.join(self._repo_dir, alias, version))
             revisions.append(Revision(alias=alias,
                                       file_path=self.path(alias),
                                       timestamp=timestamp,
-                                      version=int(version)))
+                                      version=int(version),
+                                      commit_message=self.message(alias, version)))
 
         return revisions
 
@@ -161,11 +176,9 @@ class Repository(object):
         if not self._exists(alias):
             raise exceptions.AliasNotFoundException(alias=alias)
 
-        if version == 'latest':
-            version = max([revision.version for revision in self.revisions(alias)])
-            self._logger.debug("Converted version 'latest' to last version: {0}".format(version))
+        version = self._convert_version(alias, version)
 
-        file_path = os.path.join(self._repo_dir, alias, str(version))
+        file_path = os.path.join(self._repo_dir, alias, str(version), 'contents')
 
         if not os.path.exists(file_path):
             raise exceptions.VersionNotFoundException(alias=alias, version=version)
@@ -173,6 +186,28 @@ class Repository(object):
         with open(file_path) as f:
             self._logger.debug('Returning contents of file {0}'.format(file_path))
             return f.read()
+
+    def message(self, alias, version):
+
+        if not self._exists(alias):
+            raise exceptions.AliasNotFoundException(alias=alias)
+
+        version = self._convert_version(alias, version)
+
+        file_path = os.path.join(self._repo_dir, alias, str(version), 'commit-message')
+
+        if not os.path.exists(file_path):
+            raise exceptions.VersionNotFoundException(alias=alias, version=version)
+
+        with open(file_path) as f:
+            self._logger.debug('Returning contents of file {0}'.format(file_path))
+            return f.read()
+
+    def _convert_version(self, alias, version):
+        if version == 'latest':
+            version = max([revision.version for revision in self.revisions(alias)])
+            self._logger.debug("Converted version 'latest' to last version: {0}".format(version))
+        return version
 
     def _exists(self, alias):
 
@@ -182,7 +217,7 @@ class Repository(object):
 
     def _find_current_version(self, alias):
 
-        versions = utils.lsf(os.path.join(self._repo_dir, alias))
+        versions = utils.lsd(os.path.join(self._repo_dir, alias))
 
         if not versions:
             return -1
@@ -206,10 +241,11 @@ class File(object):
         self.alias = alias
 
 
-# pylint: disable=too-few-public-methods
+# pylint: disable=too-few-public-methods,too-many-arguments
 class Revision(object):
 
-    def __init__(self, alias, file_path, timestamp, version):
+    def __init__(self, alias, file_path, timestamp, version, commit_message):
+        self.commit_message = commit_message
         self.alias = alias
         self.timestamp = timestamp
         self.file_path = file_path

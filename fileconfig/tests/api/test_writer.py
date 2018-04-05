@@ -59,6 +59,17 @@ from fileconfig.api import exceptions
      constants.PROPERTIES,
      '''key3=value3
 key2=value2
+'''),
+
+    ({
+         'section1': {
+             'key1': 'value1'
+         }
+     },
+     constants.INI,
+     '''[section1]
+key1=value1
+
 ''')
 
 ])
@@ -108,6 +119,17 @@ def test_dump(temp_file, dictionary, fmt, expected):
      constants.PROPERTIES,
      '''key3=value3
 key2=value2
+'''),
+
+    ({
+         'section1': {
+             'key1': 'value1'
+         }
+     },
+     constants.INI,
+     '''[section1]
+key1=value1
+
 ''')
 
 ])

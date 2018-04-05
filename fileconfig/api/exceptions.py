@@ -140,3 +140,13 @@ class CorruptFileException(ApiException):
 
     def __str__(self):
         return 'Corrupted File ({0}): {1}'.format(self.file_path, self.message)
+
+
+class IllegalAliasException(ApiException):
+
+    def __init__(self, alias):
+        self.alias = alias
+        super(IllegalAliasException, self).__init__(self.__str__())
+
+    def __str__(self):
+        return 'Alias is illegal (Must not contain spaces nor path separators)'

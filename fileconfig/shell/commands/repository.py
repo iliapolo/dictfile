@@ -70,13 +70,14 @@ def revisions(ctx, alias):
 
     repo = ctx.parent.parent.repo
 
-    table = PrettyTable(field_names=['alias', 'path', 'timestamp', 'version'])
+    table = PrettyTable(field_names=['alias', 'path', 'timestamp', 'version', 'message'])
 
     for revision in sorted(repo.revisions(alias), key=lambda rev: rev.version):
         table.add_row([revision.alias,
                        revision.file_path,
                        datetime.datetime.fromtimestamp(revision.timestamp).isoformat(),
-                       revision.version])
+                       revision.version,
+                       revision.commit_message])
 
     click.echo(table.get_string())
 
@@ -99,23 +100,25 @@ def files(ctx):
 @click.command()
 @click.option('--alias', required=True)
 @click.option('--version', required=True)
+@click.option('--message', required=False)
 @click.pass_context
 @handle_exceptions
-def reset(ctx, alias, version):
+def reset(ctx, alias, version, message):
 
     repo = ctx.parent.parent.repo
 
     with open(repo.path(alias), 'w') as f:
         f.write(repo.contents(alias, version))
 
-    repo.commit(alias)
+    repo.commit(alias, message)
 
 
 @click.command()
 @click.option('--alias', required=True)
+@click.option('--message', required=False)
 @click.pass_context
 @handle_exceptions
-def commit(ctx, alias):
+def commit(ctx, alias, message):
 
     repo = ctx.parent.parent.repo
 
@@ -126,4 +129,4 @@ def commit(ctx, alias):
         e.possible_solutions = [solutions.edit_manually(), solutions.reset_to_latest(alias)]
         raise
 
-    repo.commit(alias)
+    repo.commit(alias, message)

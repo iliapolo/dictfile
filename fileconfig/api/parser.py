@@ -15,6 +15,9 @@
 #
 #############################################################################
 
+import configparser
+
+
 import javaproperties
 import yaml
 from yaml.scanner import ScannerError
@@ -28,7 +31,7 @@ def load(file_path, fmt):
     with open(file_path) as stream:
         try:
             return loads(stream.read(), fmt=fmt)
-        except ScannerError as e:
+        except (ScannerError, configparser.ParsingError) as e:
             raise exceptions.CorruptFileException(file_path=file_path, message=str(e))
 
 
@@ -52,6 +55,21 @@ def loads(string, fmt):
     elif fmt == constants.PROPERTIES:
 
         return javaproperties.loads(string)
+
+    elif fmt == constants.INI:
+
+        dictionary = {}
+        ini_parser = configparser.ConfigParser()
+        ini_parser.read_string(unicode(string))
+
+        for section in ini_parser.sections():
+            section = str(section)
+            dictionary[section] = {}
+            for key in ini_parser.options(section):
+                key = str(key)
+                dictionary[section][key] = ini_parser.get(section=section, option=key)
+
+        return dictionary
 
     else:
 

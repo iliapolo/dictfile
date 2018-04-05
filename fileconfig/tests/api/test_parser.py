@@ -42,6 +42,16 @@ from fileconfig.api import constants
             'a': 'test1',
             'b': 'test2'
         }
+    }),
+
+    ("test_load_ini.ini", constants.INI, {
+        'section1': {
+            'key1': 'value1',
+            'key2': 'value2'
+        },
+        'section2': {
+            'key3': 'value3'
+        }
     })
 
 ])
@@ -72,6 +82,16 @@ def test_load(resource, fmt, expected):
             'a': 'test1',
             'b': 'test2'
         }
+    }),
+
+    ("test_load_ini.ini", constants.INI, {
+        'section1': {
+            'key1': 'value1',
+            'key2': 'value2'
+        },
+        'section2': {
+            'key3': 'value3'
+        }
     })
 
 ])
@@ -88,7 +108,7 @@ def test_loads(resource, fmt, expected):
 # pylint: disable=fixme
 # TODO figure out how to validate a properties file
 # TODO seems like every string is acceptable
-@pytest.mark.parametrize("fmt", [constants.JSON, constants.YAML])
+@pytest.mark.parametrize("fmt", [constants.JSON, constants.YAML, constants.INI])
 def test_corrupt_file(fmt):
 
     with pytest.raises(exceptions.CorruptFileException):

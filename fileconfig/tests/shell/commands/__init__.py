@@ -14,14 +14,16 @@
 #   * limitations under the License.
 #
 #############################################################################
+
 import os
+import shlex
 
 from click.testing import CliRunner
 
-from fileconfig.api import logger
+from fileconfig.api import logger, constants
+from fileconfig.api.constants import PROGRAM_NAME
 from fileconfig.api.repository import Repository
 from fileconfig.main import app
-from fileconfig.api.constants import PROGRAM_NAME
 
 
 # pylint: disable=too-few-public-methods
@@ -36,7 +38,7 @@ class Runner(object):
 
         self.log.info('Invoking command: {0}'.format(command))
 
-        result = self._runner.invoke(app, command.split(' ')[1:],
+        result = self._runner.invoke(app, shlex.split(command)[1:],
                                      catch_exceptions=catch_exceptions)
 
         if isinstance(result.exception, SystemExit) and not catch_exceptions:
@@ -67,3 +69,15 @@ class CommandLineFixture(object):
 
     def run(self, command, catch_exceptions=False):
         raise NotImplementedError()
+
+
+def get_parse_error(fmt):
+    expected_exception_message = '''mapping values are not allowed here
+  in "<string>", line 3, column 9:
+      "key1": "key2"
+            ^'''
+    if fmt == constants.INI:
+        expected_exception_message = '''File contains no section headers.
+file: u'<string>', line: 1
+u'corruption\\n\''''
+    return expected_exception_message

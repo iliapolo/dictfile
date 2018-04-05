@@ -25,10 +25,8 @@ from fileconfig.api import exceptions
 from fileconfig.api import writer
 from fileconfig.api.constants import PROGRAM_NAME
 from fileconfig.shell import solutions, build_info, causes
-from fileconfig.tests.shell.commands import CommandLineFixture
+from fileconfig.tests.shell.commands import CommandLineFixture, get_parse_error
 from fileconfig.tests.shell.commands import Runner
-
-TEST_DICT = {'key1': 'value1'}
 
 
 @pytest.fixture(name='configure', params=constants.SUPPORTED_FORMATS)
@@ -46,7 +44,7 @@ def conf(request, home_dir):
 
     # create the file we intent to operate on
     file_path = os.path.join(home_dir, configure.alias)
-    writer.dump(obj=TEST_DICT,
+    writer.dump(obj={},
                 file_path=file_path,
                 fmt=configure.fmt)
 
@@ -64,7 +62,17 @@ def read_file(configure):
         return stream.read()
 
 
+def get_key(key, configure):
+
+    return 'section1:{0}'.format(key) if configure.fmt == constants.INI else key
+
+
 def write_file(dictionary, configure):
+
+    if configure.fmt == constants.INI:
+        # ini format must have its sections as the
+        # first level keys of the dictionary
+        dictionary = {'section1': copy.deepcopy(dictionary)}
 
     writer.dump(obj=dictionary,
                 file_path=configure.repo.path(configure.alias),
@@ -72,9 +80,19 @@ def write_file(dictionary, configure):
     configure.repo.commit(alias=configure.alias)
 
 
+def write_string(dictionary, configure):
+
+    if configure.fmt == constants.INI:
+        # ini format must have its sections as the
+        # first level keys of the dictionary
+        dictionary = {'section1': copy.deepcopy(dictionary)}
+
+    return writer.dumps(obj=dictionary, fmt=configure.fmt)
+
+
 def skip_if_not_compound(configure):
 
-    if configure.fmt in [constants.PROPERTIES]:
+    if configure.fmt not in constants.COMPOUND_FORMATS:
         pytest.skip('{0} format does not support this'.format(configure.fmt))
 
 
@@ -87,17 +105,21 @@ def test_put_with_simple_value(configure):
         configure=configure
     )
 
-    expected = writer.dumps(
-        obj={
+    expected = write_string(
+        dictionary={
             'key1': 'value2'
         },
-        fmt=configure.fmt)
+        configure=configure)
 
-    configure.run('put --key key1 --value value2')
+    expected_message = configure.alias
+
+    configure.run('put --key {0} --value value2 --message {1}'
+                  .format(get_key('key1', configure), expected_message))
 
     actual = read_file(configure=configure)
 
     assert expected == actual
+    assert expected_message == configure.repo.message(alias=configure.alias, version=2)
 
 
 def test_put_with_int_value(configure):
@@ -109,13 +131,13 @@ def test_put_with_int_value(configure):
         configure=configure
     )
 
-    expected = writer.dumps(
-        obj={
+    expected = write_string(
+        dictionary={
             'key1': 5
         },
-        fmt=configure.fmt)
+        configure=configure)
 
-    configure.run('put --key key1 --value 5')
+    configure.run('put --key {0} --value 5'.format(get_key('key1', configure)))
 
     actual = read_file(configure=configure)
 
@@ -131,13 +153,13 @@ def test_put_with_float_value(configure):
         configure=configure
     )
 
-    expected = writer.dumps(
-        obj={
+    expected = write_string(
+        dictionary={
             'key1': 5.5
         },
-        fmt=configure.fmt)
+        configure=configure)
 
-    configure.run('put --key key1 --value 5.5')
+    configure.run('put --key {0} --value 5.5'.format(get_key('key1', configure)))
 
     actual = read_file(configure=configure)
 
@@ -154,20 +176,21 @@ def test_put_compound_value(configure):
     )
 
     fmt = configure.fmt
-    result = configure.run('put --key key1 --value {"key2":"value1"}', catch_exceptions=True)
+    result = configure.run('put --key {0} --value {{\\"key2\\":\\"value1\\"}}'
+                           .format(get_key('key1', configure)), catch_exceptions=True)
 
     if fmt not in constants.COMPOUND_FORMATS:
         expected = 'Error: Unsupported operation: put with complex values (format={0}) \n'.format(
             fmt)
         actual = result.output
     else:
-        expected = writer.dumps(
-            obj={
+        expected = write_string(
+            dictionary={
                 'key1': {
                     'key2': 'value1'
                 }
             },
-            fmt=configure.fmt)
+            configure=configure)
         actual = read_file(configure=configure)
 
     assert expected == actual
@@ -185,11 +208,12 @@ def test_put_complex_key_compound_value(configure):
             },
             configure=configure)
 
-    result = configure.run('put --key key1:key2 --value {"key3":"value2"}', catch_exceptions=True)
+    result = configure.run('put --key key1:key2 --value {\\"key3\\":\\"value2\\"}',
+                           catch_exceptions=True)
 
     if fmt not in constants.COMPOUND_FORMATS:
-        expected = 'Error: Unsupported operation: put with complex keys (format={0}) \n'.format(
-            fmt)
+        expected = 'Error: Unsupported operation: put with complex {0} (format={1}) \n'.format(
+            'keys' if fmt == constants.PROPERTIES else 'values', fmt)
         actual = result.output
     else:
         expected = writer.dumps(
@@ -222,8 +246,10 @@ def test_delete_complex_key(configure):
     result = configure.run('delete --key key1:key3', catch_exceptions=True)
 
     if fmt not in constants.COMPOUND_FORMATS:
-        expected = 'Error: Unsupported operation: delete with complex keys (format={0}) \n'.format(
-            fmt)
+        expected = 'Error: Unsupported operation: delete with complex keys (format={0}) \n'\
+                   .format(fmt)
+        if fmt == constants.INI:
+            expected = "Error: Key 'key1:key3' does not exist\n"
         actual = result.output
     else:
         expected = writer.dumps(
@@ -246,9 +272,10 @@ def test_delete_non_existing_key(configure):
         },
         configure=configure)
 
-    expected = "Error: Key 'key2' does not exist\n"
+    expected = "Error: Key '{0}' does not exist\n".format(get_key('key2', configure))
 
-    result = configure.run('delete --key key2', catch_exceptions=True)
+    result = configure.run('delete --key {0}'.format(get_key('key2', configure)),
+                           catch_exceptions=True)
 
     actual = result.output
 
@@ -264,13 +291,16 @@ def test_delete(configure):
         },
         configure=configure)
 
-    expected = writer.dumps(
-        obj={
+    expected = write_string(
+        dictionary={
             'key2': 'value2'
         },
-        fmt=configure.fmt)
+        configure=configure)
 
-    result = configure.run('delete --key key1')
+    expected_message = configure.alias
+
+    result = configure.run('delete --key {0} --message {1}'
+                           .format(get_key('key1', configure), expected_message))
 
     actual = read_file(configure=configure)
 
@@ -278,6 +308,7 @@ def test_delete(configure):
 
     assert expected == actual
     assert expected_deleted_value + '\n' == result.output
+    assert expected_message == configure.repo.message(alias=configure.alias, version=2)
 
 
 def test_get(configure):
@@ -290,7 +321,7 @@ def test_get(configure):
 
     expected = 'value1\n'
 
-    result = configure.run('get --key key1')
+    result = configure.run('get --key {0}'.format(get_key('key1', configure)))
 
     actual = result.output
 
@@ -305,9 +336,10 @@ def test_get_non_existing_key(configure):
         },
         configure=configure)
 
-    expected = "Error: Key 'key2' does not exist\n"
+    key = get_key('key2', configure)
+    expected = "Error: Key '{0}' does not exist\n".format(key)
 
-    result = configure.run('get --key key2', catch_exceptions=True)
+    result = configure.run('get --key {0}'.format(key), catch_exceptions=True)
 
     actual = result.output
 
@@ -329,11 +361,13 @@ def test_get_compound_value(configure):
         },
         configure=configure)
 
-    expected = writer.dumps({
-        "key2": "value1"
-    }, fmt=configure.fmt) + '\n'
+    expected = write_string(
+        dictionary={
+            "key2": "value1"
+        },
+        configure=configure) + '\n'
 
-    result = configure.run('get --key key1')
+    result = configure.run('get --key {0}'.format(get_key('key1', configure)))
 
     actual = result.output
 
@@ -356,6 +390,10 @@ def test_get_complex_key(configure):
 
     if fmt not in constants.COMPOUND_FORMATS:
         expected = 'Error: Unsupported operation: get with complex keys (format={0}) \n'.format(fmt)
+
+        if fmt == constants.INI:
+            expected = "Error: Key 'key1:key2' does not exist\n"
+
         actual = result.output
     else:
         expected = 'value1\n'
@@ -374,18 +412,22 @@ def test_add(configure):
             },
             configure=configure)
 
-    result = configure.run('add --key key1 --value value2', catch_exceptions=True)
+    expected_message = configure.alias
+
+    result = configure.run('add --key {0} --value value2 --message {1}'
+                           .format(get_key('key1', configure), expected_message),
+                           catch_exceptions=True)
 
     if fmt not in constants.COMPOUND_FORMATS:
         expected = 'Error: Unsupported operation: add (format={0}) \n'.format(fmt)
         actual = result.output
         assert expected == actual
     else:
-        expected = writer.dumps(
-            obj={
+        expected = write_string(
+            dictionary={
                 'key1': ['value1', 'value2']
             },
-            fmt=fmt)
+            configure=configure)
         actual = read_file(configure=configure)
 
         assert expected == actual
@@ -393,6 +435,7 @@ def test_add(configure):
         expected = writer.dumps(obj=['value1', 'value2'], fmt=fmt)
 
         assert expected + '\n' == result.output
+        assert expected_message == configure.repo.message(alias=configure.alias, version=2)
 
 
 def test_add_to_complex_key(configure):
@@ -407,19 +450,21 @@ def test_add_to_complex_key(configure):
             },
             configure=configure)
 
-    result = configure.run('add --key key1:key2 --value value2', catch_exceptions=True)
+    result = configure.run('add --key {0} --value value2'
+                           .format(get_key('key1:key2', configure)),
+                           catch_exceptions=True)
 
     if fmt not in constants.COMPOUND_FORMATS:
         expected = 'Error: Unsupported operation: add (format={0}) \n'.format(fmt)
         actual = result.output
     else:
-        expected = writer.dumps(
-            obj={
+        expected = write_string(
+            dictionary={
                 'key1': {
                     'key2': ['value1', 'value2']
                 }
             },
-            fmt=configure.fmt)
+            configure=configure)
         actual = read_file(configure=configure)
 
     assert expected == actual
@@ -435,18 +480,22 @@ def test_remove(configure):
             },
             configure=configure)
 
-    result = configure.run('remove --key key1 --value value2', catch_exceptions=True)
+    expected_message = configure.alias
+
+    result = configure.run('remove --key {0} --value value2 --message {1}'
+                           .format(get_key('key1', configure), expected_message),
+                           catch_exceptions=True)
 
     if fmt not in constants.COMPOUND_FORMATS:
         expected = 'Error: Unsupported operation: remove (format={0}) \n'.format(fmt)
         actual = result.output
         assert expected == actual
     else:
-        expected = writer.dumps(
-            obj={
+        expected = write_string(
+            dictionary={
                 'key1': ['value1']
             },
-            fmt=configure.fmt)
+            configure=configure)
         actual = read_file(configure=configure)
 
         assert expected == actual
@@ -454,6 +503,7 @@ def test_remove(configure):
         expected = writer.dumps(obj=['value1'], fmt=fmt)
 
         assert expected + '\n' == result.output
+        assert expected_message == configure.repo.message(alias=configure.alias, version=2)
 
 
 def test_remove_from_complex_key(configure):
@@ -468,19 +518,21 @@ def test_remove_from_complex_key(configure):
             },
             configure=configure)
 
-    result = configure.run('remove --key key1:key2 --value value2', catch_exceptions=True)
+    result = configure.run('remove --key {0} --value value2'
+                           .format(get_key('key1:key2', configure)),
+                           catch_exceptions=True)
 
     if fmt not in constants.COMPOUND_FORMATS:
         expected = 'Error: Unsupported operation: remove (format={0}) \n'.format(fmt)
         actual = result.output
     else:
-        expected = writer.dumps(
-            obj={
+        expected = write_string(
+            dictionary={
                 'key1': {
                     'key2': ['value1']
                 }
             },
-            fmt=configure.fmt)
+            configure=configure)
         actual = read_file(configure=configure)
 
     assert expected == actual
@@ -505,11 +557,10 @@ def test_corrupt_file(configure):
 
     result = configure.run('get --key key1:key2', catch_exceptions=True)
 
+    expected_exception_message = get_parse_error(fmt)
+
     exception = exceptions.CorruptFileException(file_path=file_path,
-                                                message='''mapping values are not allowed here
-  in "<string>", line 3, column 9:
-      "key1": "key2"
-            ^''')
+                                                message=expected_exception_message)
     exception.possible_solutions = [solutions.edit_manually(), solutions.reset_to_latest(alias)]
     exception.cause = causes.EDITED_MANUALLY
 
@@ -527,17 +578,14 @@ def test_different_file(configure):
 
     expected = 'Error: ' + str(exception) + build_info(exception) + '\n'
 
-    fmt = configure.fmt
-
     file_path = configure.repo.path(configure.alias)
     with open(file_path, 'w') as stream:
 
-        changed = copy.deepcopy(TEST_DICT)
-        for key, value in TEST_DICT.items():
-            changed[key] = value + '-' + configure.alias
+        changed = {'key1': 'value1'}
 
-        stream.write(writer.dumps(obj=changed, fmt=fmt))
+        stream.write(write_string(dictionary=changed, configure=configure))
 
-    result = configure.run('get --key key1:key2', catch_exceptions=True)
+    result = configure.run('get --key {0}'.format(get_key('key1:key2', configure)),
+                           catch_exceptions=True)
 
     assert expected == result.output

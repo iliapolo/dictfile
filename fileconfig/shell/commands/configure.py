@@ -41,10 +41,12 @@ def commit(func):
         ctx = _lookup_context(*args)
 
         alias = ctx.parent.params['alias']
+        message = kwargs['message']
+        del kwargs['message']
 
         func(*args, **kwargs)
 
-        ctx.parent.parent.repo.commit(alias)
+        ctx.parent.parent.repo.commit(alias, message)
 
     return wrapper
 
@@ -52,6 +54,7 @@ def commit(func):
 @click.command()
 @click.option('--key', required=True)
 @click.option('--value', required=True)
+@click.option('--message', required=False)
 @click.pass_context
 @handle_exceptions
 @commit
@@ -61,8 +64,8 @@ def put(ctx, key, value):
 
     fmt = ctx.parent.parent.repo.fmt(alias)
 
-    if fmt in [constants.PROPERTIES]:
-        if ':' in key:
+    if fmt not in constants.COMPOUND_FORMATS:
+        if ':' in key and fmt == constants.PROPERTIES:
             raise exceptions.UnsupportedOperationException(fmt=fmt,
                                                            operation='put with complex keys')
         if value.startswith('{') and value.endswith('}'):
@@ -81,6 +84,7 @@ def put(ctx, key, value):
 @click.command()
 @click.option('--key', required=True)
 @click.option('--value', required=True)
+@click.option('--message', required=False)
 @click.pass_context
 @handle_exceptions
 @commit
@@ -90,7 +94,7 @@ def add(ctx, key, value):
 
     fmt = ctx.parent.parent.repo.fmt(alias)
 
-    if fmt in [constants.PROPERTIES]:
+    if fmt not in constants.COMPOUND_FORMATS:
         raise exceptions.UnsupportedOperationException(fmt=fmt, operation='add')
 
     patched = ctx.parent.patcher.add(key=key, value=value).finish()
@@ -102,6 +106,7 @@ def add(ctx, key, value):
 
 @click.command()
 @click.option('--key', required=True)
+@click.option('--message', required=False)
 @click.pass_context
 @handle_exceptions
 @commit
@@ -146,6 +151,7 @@ def get(ctx, key):
 @click.command()
 @click.option('--key', required=True)
 @click.option('--value', required=True)
+@click.option('--message', required=False)
 @click.pass_context
 @handle_exceptions
 @commit
@@ -155,7 +161,7 @@ def remove(ctx, key, value):
 
     fmt = ctx.parent.parent.repo.fmt(alias)
 
-    if fmt in [constants.PROPERTIES]:
+    if fmt not in constants.COMPOUND_FORMATS:
         raise exceptions.UnsupportedOperationException(fmt=fmt, operation='remove')
 
     patched = ctx.parent.patcher.remove(key=key, value=value).finish()

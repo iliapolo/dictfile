@@ -14,6 +14,7 @@
 #   * limitations under the License.
 #
 #############################################################################
+
 import copy
 import datetime
 import os
@@ -23,10 +24,9 @@ from prettytable import PrettyTable
 
 from fileconfig.api import writer, constants, exceptions
 from fileconfig.api.constants import PROGRAM_NAME
+from fileconfig.api.repository import ADD_COMMIT_MESSAGE
 from fileconfig.shell import build_info, solutions, causes
-from fileconfig.tests.shell.commands import CommandLineFixture
-
-TEST_DICT = {'key1': 'value1'}
+from fileconfig.tests.shell.commands import CommandLineFixture, get_parse_error
 
 
 @pytest.fixture(name='repository', params=constants.SUPPORTED_FORMATS)
@@ -44,11 +44,47 @@ def repo(request, home_dir):
 
     # create the file we intent to alias
     file_path = os.path.join(home_dir, repository.alias)
-    writer.dump(obj=TEST_DICT, file_path=file_path, fmt=repository.fmt)
+
+    writer.dump(obj=get_test_dict(repository), file_path=file_path, fmt=repository.fmt)
     repository.run('add --alias {0} --file-path {1} --fmt {2}'
                    .format(repository.alias, file_path, repository.fmt))
 
     yield repository
+
+
+def get_test_dict(repository):
+
+    return get_dict(base_dict={'key1': 'value1'}, repository=repository)
+
+
+def get_dict(base_dict, repository):
+
+    if repository.fmt == constants.INI:
+        dictionary = {'section1': copy.deepcopy(base_dict)}
+    else:
+        dictionary = base_dict
+
+    return dictionary
+
+
+def test_add_alias_with_spaces(repository):
+
+    result = repository.run('add --alias="alias with spaces" --file-path=dummy --fmt={0}'
+                            .format(repository.fmt), catch_exceptions=True)
+
+    expected_output = 'Error: Alias is illegal (Must not contain spaces nor path separators)\n'
+
+    assert expected_output == result.output
+
+
+def test_add_alias_with_path_sep(repository):
+
+    result = repository.run('add --alias="alias{0}with{0}sep" --file-path=dummy --fmt={1}'
+                            .format(os.sep, repository.fmt), catch_exceptions=True)
+
+    expected_output = 'Error: Alias is illegal (Must not contain spaces nor path separators)\n'
+
+    assert expected_output == result.output
 
 
 def test_add_no_file(repository):
@@ -89,7 +125,7 @@ def test_show(repository):
 
     result = repository.run('show --alias {0} --version 0'.format(alias))
 
-    expected = writer.dumps(obj=TEST_DICT, fmt=repository.fmt)
+    expected = writer.dumps(obj=get_test_dict(repository), fmt=repository.fmt)
 
     assert expected + '\n' == result.output
 
@@ -100,7 +136,7 @@ def test_show_latest(repository):
 
     result = repository.run('show --alias {0} --version latest'.format(alias))
 
-    expected = writer.dumps(obj=TEST_DICT, fmt=repository.fmt)
+    expected = writer.dumps(obj=get_test_dict(repository), fmt=repository.fmt)
 
     assert expected + '\n' == result.output
 
@@ -146,9 +182,9 @@ def test_revisions(repository):
 
     timestamp = repository.repo.revisions(alias)[0].timestamp
 
-    table = PrettyTable(field_names=['alias', 'path', 'timestamp', 'version'])
+    table = PrettyTable(field_names=['alias', 'path', 'timestamp', 'version', 'message'])
     table.add_row([repository.alias, repository.repo.path(alias),
-                   datetime.datetime.fromtimestamp(timestamp).isoformat(), '0'])
+                   datetime.datetime.fromtimestamp(timestamp).isoformat(), '0', ADD_COMMIT_MESSAGE])
 
     expected = table.get_string()
 
@@ -183,10 +219,10 @@ def test_reset(repository):
     with open(file_path, 'w') as stream:
         stream.write('corrupted')
 
-    repository.run('reset --alias {0} --version 0'.format(alias))
+    repository.run('reset --alias {0} --version 0 --message {0}'.format(alias))
 
     with open(file_path) as stream:
-        expected = writer.dumps(obj=TEST_DICT, fmt=repository.fmt)
+        expected = writer.dumps(obj=get_test_dict(repository), fmt=repository.fmt)
         actual = stream.read()
 
     revisions = repository.repo.revisions(alias)
@@ -195,6 +231,7 @@ def test_reset(repository):
 
     assert expected == actual
     assert expected_number_of_revisions == len(revisions)
+    assert alias == repository.repo.message(alias=alias, version=1)
 
 
 def test_reset_latest(repository):
@@ -207,7 +244,7 @@ def test_reset_latest(repository):
     repository.run('reset --alias {0} --version latest'.format(alias))
 
     with open(file_path) as stream:
-        expected = writer.dumps(obj=TEST_DICT, fmt=repository.fmt)
+        expected = writer.dumps(obj=get_test_dict(repository), fmt=repository.fmt)
         actual = stream.read()
 
     revisions = repository.repo.revisions(alias)
@@ -267,14 +304,14 @@ def test_commit(repository):
 
     with open(file_path, 'w') as stream:
 
-        changed = copy.deepcopy(TEST_DICT)
-        for key, value in TEST_DICT.items():
-            changed[key] = value + '-' + repository.alias
+        changed = get_dict(base_dict={'key5': 'value5'}, repository=repository)
 
         contents = writer.dumps(obj=changed, fmt=repository.fmt)
         stream.write(contents)
 
-    repository.run('commit --alias {0}'.format(alias))
+    expected_message = "my message"
+
+    repository.run('commit --alias {0} --message "{1}"'.format(alias, expected_message))
 
     revisions = repository.repo.revisions(alias)
 
@@ -282,6 +319,7 @@ def test_commit(repository):
 
     assert expected_number_of_revisions == len(revisions)
     assert contents == repository.repo.contents(alias=alias, version=1)
+    assert expected_message == repository.repo.message(alias=alias, version=1)
 
 
 def test_commit_corrupt_file(repository):
@@ -305,11 +343,10 @@ def test_commit_corrupt_file(repository):
 
     result = repository.run('commit --alias {0}'.format(alias), catch_exceptions=True)
 
+    expected_exception_message = get_parse_error(fmt)
+
     ex = exceptions.CorruptFileException(file_path=file_path,
-                                         message='''mapping values are not allowed here
-  in "<string>", line 3, column 9:
-      "key1": "key2"
-            ^''')
+                                         message=expected_exception_message)
     ex.possible_solutions = [solutions.edit_manually(), solutions.reset_to_latest(alias)]
     ex.cause = causes.EDITED_MANUALLY
 

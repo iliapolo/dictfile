@@ -19,7 +19,7 @@
 import pytest
 
 from fileconfig.api.patcher import Patcher
-from fileconfig.api import exceptions
+from fileconfig.api import exceptions, writer
 from fileconfig.api import constants
 
 
@@ -287,6 +287,22 @@ def test_get_existing_one_level_complex_key():
 
     patcher = Patcher(dictionary)
     value = patcher.get('key1:key2')
+
+    assert expected_value == value
+
+
+def test_get_ini_section():
+
+    dictionary = {
+        'section': {
+            'key1': 'key2'
+        }
+    }
+
+    expected_value = writer.dumps(obj={'key1': 'key2'}, fmt=constants.PROPERTIES)
+
+    patcher = Patcher(dictionary)
+    value = patcher.get('section', fmt=constants.INI)
 
     assert expected_value == value
 
