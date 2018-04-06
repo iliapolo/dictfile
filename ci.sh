@@ -16,7 +16,7 @@ pylint --rcfile .pylint.ini fileconfig
 echo "Running tests"
 py.test --cov-report term-missing --cov=fileconfig fileconfig/tests
 
-if [ -z ${TRAVIS_PULL_REQUEST_BRANCH} ] && [ "dev" -eq ${TRAVIS_BRANCH} ]; then
+if [ -z ${TRAVIS_PULL_REQUEST_BRANCH} ] && [ "dev" = ${TRAVIS_BRANCH} ]; then
     pip install https://github.com/iliapolo/pyrelease/archive/master.zip
     pyrelease release --repo iliapolo/fileconfig --branch dev
 fi
