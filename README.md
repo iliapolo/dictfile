@@ -5,6 +5,8 @@ fileconfig (sntsed)
 
 ## Motivation
 
+
+
 A while back i was given a task to deploy a bunch of software components onto an amazon EC2 instance:
 
 - Graphite + Grafana
