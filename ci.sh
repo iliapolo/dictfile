@@ -2,6 +2,8 @@
 
 set -e
 
+env
+
 echo "Installing test requirements"
 pip install -r test-requirements.txt
 
