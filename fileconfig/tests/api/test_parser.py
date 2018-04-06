@@ -59,7 +59,7 @@ def test_load(resource, fmt, expected):
 
     actual = parser.load(file_path=get_resource(resource), fmt=fmt)
 
-    assert expected != actual
+    assert expected == actual
 
 
 @pytest.mark.parametrize("resource,fmt,expected", [
