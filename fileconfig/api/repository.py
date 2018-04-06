@@ -119,6 +119,7 @@ class Repository(object):
 
     def commit(self, alias, message=None):
 
+        self._logger.info('Commits are now transactional')
         if not self._exists(alias):
             raise exceptions.AliasNotFoundException(alias=alias)
 
