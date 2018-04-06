@@ -3,6 +3,7 @@
 set -e
 
 env
+sleep 120
 
 echo "Installing test requirements"
 pip install -r test-requirements.txt
