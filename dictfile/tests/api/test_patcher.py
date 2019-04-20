@@ -359,6 +359,20 @@ def test_get_compound_object_unsupported_format():
         patcher.get('key1', fmt='unsupported')
 
 
+def test_get_list_element():
+
+    dictionary = {
+        'key1': ["value1", "value2"]
+    }
+
+    expected_value = 'value1'
+
+    patcher = Patcher(dictionary)
+    value = patcher.get('key1:0')
+
+    assert expected_value == value
+
+
 def test_get_list_as_json():
 
     dictionary = {

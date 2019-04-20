@@ -82,7 +82,7 @@ class Patcher(object):
 
         """
 
-        self._fdict = flatdict.FlatDict(dictionary)
+        self._fdict = flatdict.FlatterDict(dictionary)
         self._logger = logger.get_logger('{0}.api.patcher.Patcher'.format(constants.PROGRAM_NAME))
 
     def set(self, key, value):
