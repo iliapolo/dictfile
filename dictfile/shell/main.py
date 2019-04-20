@@ -35,15 +35,21 @@ from dictfile.api.constants import PROGRAM_NAME
 # pylint: disable=no-value-for-parameter
 @click.group()
 @click.option('--debug', is_flag=True)
+@click.option('--local', is_flag=True)
 @click.pass_context
 @handle_exceptions
-def app(ctx, debug):
+def app(ctx, debug, local):
 
     if debug:
         logger.setup_loggers(level=logging.DEBUG)
 
+    if local:
+        parent = os.getcwd()
+    else:
+        parent = os.path.expanduser('~')
+
     # initialize the repository object
-    repo = Repository(os.path.join(os.path.expanduser('~'), '.{0}'.format(PROGRAM_NAME)))
+    repo = Repository(os.path.join(parent, '.{0}'.format(PROGRAM_NAME)))
     ctx.repo = repo
 
 
