@@ -347,7 +347,7 @@ def test_get_float():
     assert expected_value == value
 
 
-def test_get_compund_object_unsupported_format():
+def test_get_compound_object_unsupported_format():
 
     dictionary = {
         'key1': ['value1', 'value2']
