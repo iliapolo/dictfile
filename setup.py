@@ -23,7 +23,7 @@ PROGRAM_NAME = 'dictfile'
 
 setup(
     name=PROGRAM_NAME,
-    version='0.6.0',
+    version='0.7.0',
     author='Eli Polonsky',
     author_email='Eli.polonsky@gmail.com',
     packages=[
