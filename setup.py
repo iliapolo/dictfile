@@ -46,7 +46,7 @@ setup(
         'flatdict==3.0.0',
         'javaproperties==0.4.0',
         'prettytable==0.7.2',
-        'PyYAML==3.12',
+        'PyYAML==5.1',
         'six==1.11.0',
         'configparser==3.5.0'
     ],
