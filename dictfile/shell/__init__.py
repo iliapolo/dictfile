@@ -22,11 +22,9 @@ from functools import wraps
 import click
 import six
 
-from dictfile.api import log
-from dictfile.api import constants
+from dictfile.shell import log
 
-
-log = log.get_logger(constants.PROGRAM_NAME)
+logger = log.get()
 
 
 def handle_exceptions(func):
@@ -39,8 +37,8 @@ def handle_exceptions(func):
         except BaseException as e:
             tbio = six.StringIO()
             traceback.print_exc(file=tbio)
-            log.debug(tbio.getvalue())
-            click.echo('Error: {}'.format(str(e)))
+            logger.debug(tbio.getvalue())
+            logger.error(str(e))
             info = build_info(e)
             if info:
                 click.echo(info)

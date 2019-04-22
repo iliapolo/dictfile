@@ -21,7 +21,7 @@ import os
 
 import click
 
-from dictfile.api import log
+from dictfile.api import log as api_log
 from dictfile.api.patcher import Patcher
 from dictfile.api import parser
 from dictfile.api import exceptions
@@ -29,21 +29,29 @@ from dictfile.api.repository import Repository
 from dictfile.shell.commands import configure as configurer_group
 from dictfile.shell.commands import repository as repository_group
 from dictfile.shell import solutions, handle_exceptions, causes
+from dictfile.shell import log as shell_log
 from dictfile.api.constants import PROGRAM_NAME
+
+logger = shell_log.get()
 
 
 # pylint: disable=no-value-for-parameter
 @click.group()
 @click.option('--debug', is_flag=True)
+@click.option('--verbose', is_flag=True)
 @click.pass_context
 @handle_exceptions
-def app(ctx, debug):
+def app(ctx, verbose, debug):
+
+    if verbose:
+        logger.set_verbose(True)
 
     if debug:
-        log.setup_loggers(level=logging.DEBUG)
+        api_log.setup_loggers(level=logging.DEBUG)
 
     # initialize the repository object
-    repo = Repository(os.path.join(os.path.expanduser('~'), '.{0}'.format(PROGRAM_NAME)))
+    repo = Repository(os.path.join(os.path.expanduser('~'), '.{0}'.format(PROGRAM_NAME)),
+                      logger=logger)
     ctx.repo = repo
 
 
@@ -75,7 +83,7 @@ def configure(ctx, alias):
         exception.possible_solutions = [solutions.reset_to_latest(alias), solutions.commit(alias)]
         raise exception
 
-    patcher = Patcher(parsed)
+    patcher = Patcher(parsed, logger=logger)
     ctx.patcher = patcher
 
 
