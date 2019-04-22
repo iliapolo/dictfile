@@ -23,7 +23,7 @@ import pytest
 from dictfile.api import writer, constants, log
 from dictfile.tests.shell.commands import CommandLineFixture, get_parse_error
 
-log = log.get_logger(__name__)
+log = log.Logger(__name__)
 
 
 @pytest.fixture(name='repository', params=constants.SUPPORTED_FORMATS)

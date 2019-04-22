@@ -84,7 +84,7 @@ class Patcher(object):
         """
 
         self._fdict = flatdict.FlatDict(dictionary)
-        self._logger = logger or log.get_logger('{0}.api.patcher.Patcher'.format(
+        self._logger = logger or log.Logger('{0}.api.patcher.Patcher'.format(
             constants.PROGRAM_NAME))
 
     def set(self, key, value):

@@ -21,7 +21,6 @@ import os
 
 import click
 
-from dictfile.api import log as api_log
 from dictfile.api.patcher import Patcher
 from dictfile.api import parser
 from dictfile.api import exceptions
@@ -47,7 +46,7 @@ def app(ctx, verbose, debug):
         logger.set_verbose(True)
 
     if debug:
-        api_log.setup_loggers(level=logging.DEBUG)
+        logger.set_level(level=logging.DEBUG)
 
     # initialize the repository object
     repo = Repository(os.path.join(os.path.expanduser('~'), '.{0}'.format(PROGRAM_NAME)),

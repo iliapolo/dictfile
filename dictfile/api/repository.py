@@ -44,8 +44,8 @@ class Repository(object):
 
         self._repo_dir = os.path.join(config_dir, 'repo')
         self._state_file = os.path.join(self._repo_dir, 'repo.json')
-        self._logger = logger or log.get_logger('{0}.api.repository.Repository'
-                                                .format(constants.PROGRAM_NAME))
+        self._logger = logger or log.Logger('{0}.api.repository.Repository'
+                                            .format(constants.PROGRAM_NAME))
 
         utils.smkdir(self._repo_dir)
 

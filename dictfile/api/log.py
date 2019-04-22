@@ -20,8 +20,6 @@ import sys
 
 from dictfile.api import exceptions
 
-loggers = {}
-
 
 DEFAULT_LOG_LEVEL = logging.INFO
 DEFAULT_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -96,31 +94,3 @@ class Logger(object):
         for key, value in kwargs.items():
             kvs.append('{}={}'.format(key, value))
         return ' [{}]'.format(', '.join(kvs))
-
-
-def get_logger(name):
-
-    """
-    Get or create a specific logger by name.
-
-    Returns:
-          Logger: The logger instance.
-    """
-
-    if name not in loggers:
-        loggers[name] = Logger(name=name)
-    return loggers[name]
-
-
-def setup_loggers(level=DEFAULT_LOG_LEVEL):
-
-    """
-    Configure all loggers to the given level.
-
-    """
-
-    global DEFAULT_LOG_LEVEL
-    DEFAULT_LOG_LEVEL = level
-
-    for logger in loggers.values():
-        logger.set_level(level)

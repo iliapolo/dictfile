@@ -45,7 +45,7 @@ class Runner(object):
         self._local_runner = LocalCommandRunner()
         self._package_type = package_type
         self._packager = Packager.create(path=repo_path, target_dir=tempfile.mkdtemp())
-        self.log = log.get_logger('{0}.tests.shell.commands:Runner'.format(PROGRAM_NAME))
+        self.log = log.Logger('{0}.tests.shell.commands:Runner'.format(PROGRAM_NAME))
 
     def run(self, command, catch_exceptions=False, escape=False):
 

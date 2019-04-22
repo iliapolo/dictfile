@@ -30,11 +30,14 @@ class Logger(object):
         self._indent = 0
         self._last_break_line = True
 
-        self._logger = log.get_logger(name='dictfile')
+        self._logger = log.Logger(name='dictfile')
         self._verbose = verbose
 
     def set_verbose(self, verbose):
         self._verbose = verbose
+
+    def set_level(self, level):
+        self._logger.set_level(level)
 
     def info(self, message, **kwargs):
 
