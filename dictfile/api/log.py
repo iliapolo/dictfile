@@ -20,8 +20,6 @@ import sys
 
 from dictfile.api import exceptions
 
-loggers = {}
-
 
 DEFAULT_LOG_LEVEL = logging.INFO
 DEFAULT_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -37,12 +35,11 @@ class Logger(object):
 
     Args:
         name (str): The name of the logger.
-        level (:str, optional): The logger level.
     """
 
     _logger = None
 
-    def __init__(self, name, level=DEFAULT_LOG_LEVEL):
+    def __init__(self, name):
 
         if not name:
             raise exceptions.InvalidArgumentsException('name cannot be empty')
@@ -50,8 +47,8 @@ class Logger(object):
         self._name = name
         self._logger = logging.getLogger(name)
         self._logger.propagate = False
-        self.add_console_handler(level)
-        self.set_level(level)
+        self.add_console_handler(DEFAULT_LOG_LEVEL)
+        self.set_level(DEFAULT_LOG_LEVEL)
 
     @property
     def logger(self):
@@ -85,10 +82,10 @@ class Logger(object):
     # testfixtures from properly capturing logs for tests.
     # pylint: disable=logging-format-interpolation
     def _log(self, level, message, **kwargs):
-        self._logger.log(level, '{}{}'.format(message, self._format_key_values(**kwargs)))
+        self._logger.log(level, '{}{}'.format(message, self.format_key_values(**kwargs)))
 
     @staticmethod
-    def _format_key_values(**kwargs):
+    def format_key_values(**kwargs):
 
         if not kwargs:
             return ''
@@ -97,27 +94,3 @@ class Logger(object):
         for key, value in kwargs.items():
             kvs.append('{}={}'.format(key, value))
         return ' [{}]'.format(', '.join(kvs))
-
-
-def get_logger(name):
-
-    """
-    Get or create a specific logger by name.
-
-    Returns:
-          Logger: The logger instance.
-    """
-
-    if name not in loggers:
-        loggers[name] = Logger(name=name)
-    return loggers[name]
-
-
-def setup_loggers(level=DEFAULT_LOG_LEVEL):
-
-    """
-    Configure all loggers to the given level.
-
-    """
-    for logger in loggers.values():
-        logger.set_level(level)

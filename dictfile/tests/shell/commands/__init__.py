@@ -28,7 +28,7 @@ from pyci.api.runner import LocalCommandRunner
 from pyci.api.runner import CommandExecutionResponse
 from pyci.api.packager import Packager
 
-from dictfile.api import logger, constants
+from dictfile.api import log, constants
 from dictfile.api.constants import PROGRAM_NAME
 from dictfile.api.repository import Repository
 from dictfile.shell.main import app
@@ -45,7 +45,7 @@ class Runner(object):
         self._local_runner = LocalCommandRunner()
         self._package_type = package_type
         self._packager = Packager.create(path=repo_path, target_dir=tempfile.mkdtemp())
-        self.log = logger.get_logger('{0}.tests.shell.commands:Runner'.format(PROGRAM_NAME))
+        self.log = log.Logger('{0}.tests.shell.commands:Runner'.format(PROGRAM_NAME))
 
     def run(self, command, catch_exceptions=False, escape=False):
 
