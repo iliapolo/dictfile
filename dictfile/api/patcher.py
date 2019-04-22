@@ -72,18 +72,20 @@ class Patcher(object):
     _fdict = {}
     _logger = None
 
-    def __init__(self, dictionary):
+    def __init__(self, dictionary, logger=None):
 
         """Instantiate a Patcher instance.
 
         Args:
 
             dictionary (dict): The dictionary to patch.
+            logger (Logger): The logger instance. Defaults to python's standard logging.
 
         """
 
         self._fdict = flatdict.FlatDict(dictionary)
-        self._logger = log.get_logger('{0}.api.patcher.Patcher'.format(constants.PROGRAM_NAME))
+        self._logger = logger or log.get_logger('{0}.api.patcher.Patcher'.format(
+            constants.PROGRAM_NAME))
 
     def set(self, key, value):
 
