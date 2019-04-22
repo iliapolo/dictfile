@@ -22,11 +22,11 @@ from functools import wraps
 import click
 import six
 
-from dictfile.api import logger
+from dictfile.api import log
 from dictfile.api import constants
 
 
-log = logger.get_logger(constants.PROGRAM_NAME)
+log = log.get_logger(constants.PROGRAM_NAME)
 
 
 def handle_exceptions(func):

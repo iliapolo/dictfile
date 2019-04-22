@@ -21,7 +21,7 @@ import os
 
 import click
 
-from dictfile.api import logger
+from dictfile.api import log
 from dictfile.api.patcher import Patcher
 from dictfile.api import parser
 from dictfile.api import exceptions
@@ -40,7 +40,7 @@ from dictfile.api.constants import PROGRAM_NAME
 def app(ctx, debug):
 
     if debug:
-        logger.setup_loggers(level=logging.DEBUG)
+        log.setup_loggers(level=logging.DEBUG)
 
     # initialize the repository object
     repo = Repository(os.path.join(os.path.expanduser('~'), '.{0}'.format(PROGRAM_NAME)))

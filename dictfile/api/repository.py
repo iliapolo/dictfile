@@ -24,7 +24,7 @@ from dictfile.api import exceptions
 from dictfile.api import parser
 from dictfile.api import writer
 from dictfile.api import constants
-from dictfile.api import logger
+from dictfile.api import log
 
 
 ADD_COMMIT_MESSAGE = 'original version committed automatically upon adding the file'
@@ -44,8 +44,8 @@ class Repository(object):
 
         self._repo_dir = os.path.join(config_dir, 'repo')
         self._state_file = os.path.join(self._repo_dir, 'repo.json')
-        self._logger = logger.get_logger('{0}.api.repository.Repository'
-                                         .format(constants.PROGRAM_NAME))
+        self._logger = log.get_logger('{0}.api.repository.Repository'
+                                      .format(constants.PROGRAM_NAME))
 
         utils.smkdir(self._repo_dir)
 

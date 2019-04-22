@@ -20,10 +20,10 @@ import os
 
 import pytest
 
-from dictfile.api import writer, constants, logger
+from dictfile.api import writer, constants, log
 from dictfile.tests.shell.commands import CommandLineFixture, get_parse_error
 
-log = logger.get_logger(__name__)
+log = log.get_logger(__name__)
 
 
 @pytest.fixture(name='repository', params=constants.SUPPORTED_FORMATS)

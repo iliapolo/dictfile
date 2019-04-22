@@ -22,7 +22,7 @@ from dictfile.api import exceptions
 from dictfile.api import parser
 from dictfile.api import writer
 from dictfile.api import constants
-from dictfile.api import logger
+from dictfile.api import log
 
 
 class Patcher(object):
@@ -83,7 +83,7 @@ class Patcher(object):
         """
 
         self._fdict = flatdict.FlatDict(dictionary)
-        self._logger = logger.get_logger('{0}.api.patcher.Patcher'.format(constants.PROGRAM_NAME))
+        self._logger = log.get_logger('{0}.api.patcher.Patcher'.format(constants.PROGRAM_NAME))
 
     def set(self, key, value):
 
