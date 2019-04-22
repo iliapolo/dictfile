@@ -37,12 +37,11 @@ class Logger(object):
 
     Args:
         name (str): The name of the logger.
-        level (:str, optional): The logger level.
     """
 
     _logger = None
 
-    def __init__(self, name, level=DEFAULT_LOG_LEVEL):
+    def __init__(self, name):
 
         if not name:
             raise exceptions.InvalidArgumentsException('name cannot be empty')
@@ -50,8 +49,8 @@ class Logger(object):
         self._name = name
         self._logger = logging.getLogger(name)
         self._logger.propagate = False
-        self.add_console_handler(level)
-        self.set_level(level)
+        self.add_console_handler(DEFAULT_LOG_LEVEL)
+        self.set_level(DEFAULT_LOG_LEVEL)
 
     @property
     def logger(self):
@@ -119,5 +118,9 @@ def setup_loggers(level=DEFAULT_LOG_LEVEL):
     Configure all loggers to the given level.
 
     """
+
+    global DEFAULT_LOG_LEVEL
+    DEFAULT_LOG_LEVEL = level
+
     for logger in loggers.values():
         logger.set_level(level)
