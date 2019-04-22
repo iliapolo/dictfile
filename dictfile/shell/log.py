@@ -20,6 +20,7 @@ import logging
 import click
 
 from dictfile.api import log
+from dictfile.api.log import Logger as ApiLogger
 
 
 class Logger(object):
@@ -40,13 +41,13 @@ class Logger(object):
         if self._is_debug():
             self._logger.info(message, **kwargs)
         else:
-            click.echo('{}{}'.format(message, self._format_key_values(**kwargs)))
+            click.echo('{}{}'.format(message, ApiLogger.format_key_values(**kwargs)))
 
     def debug(self, message, **kwargs):
 
         if self._verbose:
             # in verbose mode debug statements should be printed as well.
-            click.echo('{}{}'.format(message, self._format_key_values(**kwargs)))
+            click.echo('{}{}'.format(message, ApiLogger.format_key_values(**kwargs)))
 
         self._logger.debug(message, **kwargs)
 
@@ -55,7 +56,7 @@ class Logger(object):
         if self._is_debug():
             self._logger.warn(message, **kwargs)
         else:
-            click.secho('Warning: {}{}'.format(message, self._format_key_values(**kwargs)),
+            click.secho('Warning: {}{}'.format(message, ApiLogger.format_key_values(**kwargs)),
                         fg='yellow')
 
     def error(self, message, **kwargs):
@@ -63,18 +64,8 @@ class Logger(object):
         if self._is_debug():
             self._logger.error(message, **kwargs)
         else:
-            click.secho('Error: {}{}'.format(message, self._format_key_values(**kwargs)), fg='red')
-
-    @staticmethod
-    def _format_key_values(**kwargs):
-
-        if not kwargs:
-            return ''
-
-        kvs = []
-        for key, value in kwargs.items():
-            kvs.append('{}={}'.format(key, value))
-        return ' [{}]'.format(', '.join(kvs))
+            click.secho('Error: {}{}'.format(message, ApiLogger.format_key_values(**kwargs)),
+                        fg='red')
 
     def _is_debug(self):
         return self._logger.logger.isEnabledFor(logging.DEBUG)

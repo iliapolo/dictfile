@@ -84,10 +84,10 @@ class Logger(object):
     # testfixtures from properly capturing logs for tests.
     # pylint: disable=logging-format-interpolation
     def _log(self, level, message, **kwargs):
-        self._logger.log(level, '{}{}'.format(message, self._format_key_values(**kwargs)))
+        self._logger.log(level, '{}{}'.format(message, self.format_key_values(**kwargs)))
 
     @staticmethod
-    def _format_key_values(**kwargs):
+    def format_key_values(**kwargs):
 
         if not kwargs:
             return ''
